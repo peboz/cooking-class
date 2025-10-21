@@ -1,30 +1,31 @@
-# Programsko inženjerstvo
-
-> Ime projekta u naslovu ima cilj opisati namjenu projekta te pomoći u podizanju početnog interesa za projekt prezentirajući osnovnu svrhu projekta.
-> Isključivo ovisi o Vama!
-> 
-> Naravno, nijedan predložak nije idealan za sve projekte jer su potrebe i ciljevi različiti. Ne bojte se naglasiti Vaš cilj u ovoj početnoj stranici projekta, podržat ćemo ga bez obzira usredotočili se Vi više na tenologiju ili marketing.
-> 
-> Zašto ovaj dokument? Samo manji dio timova je do sada propoznao potrebu (a i meni je lakše pratiti Vaš rad).  
+# Gurmania
 
 # Opis projekta
 Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Programsko inženjerstvo](https://www.fer.unizg.hr/predmet/proinz) na Fakultetu elektrotehnike i računarstva Sveučilišta u Zagrebu. 
 
-Kratko opisati cilj Vašeg projekta. Vaša motivacija?  (Napomena: odgovor nije »Zato što je to bio zadatak i nismo imali ideje za drugo.«). Koji problem rješavate?
-> Obzirom da je ovo zadani projekt navedite i što želite/jeste novo  naučili.
-
-> Dobro izrađen opis omogućuje vam da pokažete svoj rad drugim programerima, kao i potencijalnim poslodavcima. Ne samo da prvi dojam na stranici opisa često razlikuje dobar projekt od lošeg projekta već i predstavlja dobru praksu koju morate savladati.
+Cilj ovog projekta je izrada platforme koja, povezivanjem s instruktorima, nudi korisnicima tečajeve kuhanja. Sadržaj na platformi bit će podijeljen po razini vještine, što ga čini pristupačnim za sve korisnike. Bit će omogućena dodatna personalizacija poput alergena, preferencija i drugih ograničenja u prehrani. Ova stranica će pokazati da svi mogu kuhati kroz detaljne instrukcije i lako omogućen kontakt između instruktora i korisnika. 
 
 # Funkcijski zahtjevi
 > Navedite ključne zahtjeve Vašeg projekta.
 
 
 # Tehnologije
+* TypeScript - programski jezik
+* Next.js - radni okvir, poslužiteljska i serverska strana
+* Tailwind, Shadcn - uređenje poslužiteljske strane
+* ESLint - dodatna pomoć pri kodiranju
+* Prisma ORM (Postgres) - baza podataka
+* Render - DevOps
+* Git - upravljanje cijelim projektom
+* GitHub wiki - dokumentacija
 
-#Instalcija
 # Članovi tima 
-> Popis članova tima/linkovi/ glavni doprinos
->
+* Božanović, Petar (https://github.com/peboz) - koordinator i voditelj grupe, serverska strana, DevOps
+* Barać, Lucija (link) - poslužiteljska strana
+* Gale, Jelena (link) - baza podataka
+* Tadić, Sanja (https://github.com/stadic2604) - serverska strana, dokumentacija
+* Vidović, Ivana Nika (link) - poslužiteljska strana
+* Vladimir, Tina (link) - baza podataka
 
 # Kontribucije
 >Pravila ovise o organizaciji tima i su često izdvojena u CONTRIBUTING.md
