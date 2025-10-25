@@ -202,6 +202,7 @@ model Lesson {
   module      Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   quiz        Quiz?
   ingredients LessonIngredient[]
+  shoppingLists  ShoppingList[]     @relation("LessonShoppingLists")
   reviews     Review[]
   media       Media[]
 
@@ -209,7 +210,35 @@ model Lesson {
 }
 
 
-// INGREDIENTS
+// INGREDIENTS, SHOPPINGLIST
+
+model ShoppingList {
+  id          String       @id @default(cuid())
+  userId      String
+  title       String        @default("Moja kupovna lista")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       ShoppingListItem[]
+  lessons     Lesson[]      @relation("LessonShoppingLists", references: [id])
+
+  @@index([userId])
+}
+
+model ShoppingListItem {
+  id             String    @id @default(cuid())
+  shoppingListId String
+  ingredientId   String
+  quantity       Float?
+  unit           String?
+  purchased      Boolean   @default(false)
+
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  ingredient     Ingredient   @relation(fields: [ingredientId], references: [id])
+
+  @@unique([shoppingListId, ingredientId])
+}
 
 model Ingredient {
   id             String    @id @default(cuid())
