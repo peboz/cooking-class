@@ -84,7 +84,9 @@ model User {
 
   // veze prema aplikaciji
   courses           Course[]        @relation("InstructorCourses")
+  workshops         Workshop[]
   reviews           Review[]
+  instructorReviews Review[] @relation("InstructorReviews")
   reservations      Reservation[]
   progress          Progress[]
   certificates      Certificate[]
@@ -320,8 +322,10 @@ model QuizSubmission {
 model Review {
   id          String   @id @default(cuid())
   userId      String
-  targetType  ReviewTarget
-  targetId    String
+  targetType  ReviewTarget  //LESSON, COURSE, INSTRUCTOR
+  lessonId    String?
+  courseId    String?
+  instructorId String?
   rating      Int
   comment     String?
   createdAt   DateTime @default(now())
@@ -342,9 +346,17 @@ model Progress {
   lessonId    String?
   completed   Boolean  @default(false)
   percent     Int      @default(0)
-  updatedAt   DateTime @default(now())
+  timeSpentSec Int     @default(0)
+  lastAccessedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson      Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId, lessonId]) 
+  @@index([completed])
+
 }
 
 model Certificate {
