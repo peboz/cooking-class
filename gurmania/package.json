@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
@@ -18,12 +18,11 @@
     "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
-    "eslint": "8.57.0",
+    "eslint": "^9",
     "eslint-config-next": "16.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
