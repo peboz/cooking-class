@@ -21,11 +21,11 @@ Cilj ovog projekta je izrada platforme koja, povezivanjem s instruktorima, nudi 
 
 # Članovi tima 
 * Božanović, Petar (https://github.com/peboz) - koordinator i voditelj grupe, serverska strana, DevOps
-* Barać, Lucija (link) - poslužiteljska strana
-* Gale, Jelena (link) - baza podataka
+* Barać, Lucija (https://github.com/lucijabarac) - poslužiteljska strana
+* Gale, Jelena (https://github.com/jelenagale) - baza podataka
 * Tadić, Sanja (https://github.com/stadic2604) - serverska strana, dokumentacija
-* Vidović, Ivana Nika (link) - poslužiteljska strana
-* Vladimir, Tina (link) - baza podataka
+* Vidović, Ivana Nika (https://github.com/iv56168) - poslužiteljska strana
+* Vladimir, Tina (https://github.com/tinavladimir) - baza podataka
 
 # Kontribucije
 >Pravila ovise o organizaciji tima i su često izdvojena u CONTRIBUTING.md
