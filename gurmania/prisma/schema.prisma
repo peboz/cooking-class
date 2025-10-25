@@ -61,6 +61,12 @@ enum MediaType {
   OTHER
 }
 
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // MODELI KORISNIKA
 
 model User {
@@ -204,6 +210,7 @@ model Lesson {
   ingredients LessonIngredient[]
   shoppingLists  ShoppingList[]     @relation("LessonShoppingLists")
   reviews     Review[]
+  comments Comment[]
   media       Media[]
 
   @@index([published])
@@ -364,6 +371,39 @@ model Review {
   @@index([targetType])
   @@index([rating])
 }
+
+
+// KOMENTARI I Q&A
+
+model Comment {
+  id          String         @id @default(cuid())
+  lessonId    String
+  userId      String
+  content     String
+  isQuestion  Boolean         @default(false)
+  status      CommentStatus   @default(PENDING)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  lesson      Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies     CommentReply[]
+
+  @@index([lessonId])
+  @@index([status])
+}
+
+model CommentReply {
+  id          String       @id @default(cuid())
+  commentId   String
+  userId      String
+  content     String
+  createdAt   DateTime     @default(now())
+
+  comment     Comment      @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 
 
 // PROGRESS -> CERTIFICATE
