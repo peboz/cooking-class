@@ -11,4 +11,573 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+
+// ENUMS
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TEXT
+  PHOTO_UPLOAD
+}
+
+enum ReviewTarget {
+  LESSON
+  COURSE
+  INSTRUCTOR
+}
+
+enum ReservationStatus {
+  RESERVED
+  CANCELLED
+  ATTENDED
+  NO_SHOW
+}
+
+enum MediaType {
+  VIDEO
+  IMAGE
+  PDF
+  OTHER
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// MODELI KORISNIKA
+
+model User {
+  id                    String    @id @default(cuid())
+  name                  String?
+  email                 String?   @unique
+  emailVerified         DateTime?
+  image                 String?
+  password              String?
+  passwordChangeRequired Boolean  @default(false)
+  twoFactorEnabled      Boolean   @default(false)
+  role                  Role      @default(STUDENT)
+  isActive              Boolean   @default(true)
+  lastLoginAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // veze prema NextAuth tablicama
+  accounts      Account[]
+  sessions      Session[]
+
+  // profili
+  studentProfile    StudentProfile?
+  instructorProfile InstructorProfile?
+
+  // veze prema aplikaciji
+  courses           Course[]        @relation("InstructorCourses")
+  workshops         Workshop[]
+  reviews           Review[]
+  instructorReviews Review[]        @relation("InstructorReviews")
+  reservations      Reservation[]
+  progress          Progress[]
+  certificates      Certificate[]
+  submissions       QuizSubmission[]
+  comments          Comment[]
+  commentReplies    CommentReply[]
+  shoppingLists     ShoppingList[]
+  following         InstructorFollow[] @relation("StudentFollowing")
+  followers         InstructorFollow[] @relation("InstructorFollowers")
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  @@index([role])
+  @@index([isActive])
+  @@index([email])
+}
+
+
+model StudentProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  skillLevel          SkillLevel @default(BEGINNER)
+  dietaryPreferences  String[] 
+  allergies           String[]
+  favoriteCuisines    String[]
+  notes               String?
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model InstructorProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bio             String?
+  specializations String[]
+  verified        Boolean  @default(false)
+  verificationDocumentUrl String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+// OAUTH
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+
+// COURSE -> MODULE -> LESSON
+
+model Course {
+  id            String   @id @default(cuid())
+  instructorId  String
+  title         String
+  description   String?
+  difficulty    Difficulty  @default(EASY)
+  cuisineType   String?
+  tags          String[]
+  published     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  instructor    User     @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Cascade)
+  modules       Module[]
+  reviews       Review[] @relation("CourseReviews")
+  certificates  Certificate[]
+  media         Media[]
+  progress      Progress[]
+
+  @@index([title])
+  @@index([published])
+  @@index([instructorId])
+  @@index([cuisineType])
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  order       Int      @default(0)
+
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  @@index([courseId])
+}
+
+model Lesson {
+  id          String    @id @default(cuid())
+  moduleId    String
+  title       String
+  description String?
+  videoUrl    String?
+  steps       String?   @db.Text
+  durationMin Int?
+  difficulty  Difficulty @default(EASY)
+  prepTimeMin Int?
+  cookTimeMin Int?
+  cuisineType String?
+  allergenTags String[]
+  order       Int       @default(0)
+  published   Boolean   @default(false)
+
+  module      Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  quiz        Quiz?
+  ingredients LessonIngredient[]
+  shoppingLists  ShoppingList[]     @relation("LessonShoppingLists")
+  reviews     Review[]  @relation("LessonReviews")
+  comments    Comment[]
+  media       Media[]
+  progress    Progress[]
+
+  @@index([published])
+  @@index([moduleId])
+  @@index([cuisineType])
+}
+
+
+// INGREDIENTS, SHOPPINGLIST
+
+model ShoppingList {
+  id          String       @id @default(cuid())
+  userId      String
+  title       String        @default("Moja kupovna lista")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       ShoppingListItem[]
+  lessons     Lesson[]      @relation("LessonShoppingLists")
+
+  @@index([userId])
+}
+
+model ShoppingListItem {
+  id             String    @id @default(cuid())
+  shoppingListId String
+  ingredientId   String
+  quantity       Float?
+  unit           String?
+  purchased      Boolean   @default(false)
+
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  ingredient     Ingredient   @relation(fields: [ingredientId], references: [id])
+
+  @@unique([shoppingListId, ingredientId])
+}
+
+model Ingredient {
+  id             String    @id @default(cuid())
+  name           String
+  baseUnit       String?
+  allergenFlags  String[]
+  nutritionInfo  Json?
+  lessons        LessonIngredient[]
+  shoppingListItems ShoppingListItem[]
+
+  @@index([name])
+}
+
+model LessonIngredient {
+  id            String    @id @default(cuid())
+  lessonId      String
+  ingredientId  String
+  quantity      Float?
+  unit          String?
+  optional      Boolean   @default(false)
+
+  lesson        Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  ingredient    Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, ingredientId])
+}
+
+
+// WORKSHOP -> RESERVATIONS
+
+model Workshop {
+  id             String   @id @default(cuid())
+  instructorId   String
+  title          String
+  description    String?
+  startTime      DateTime
+  durationMin    Int?
+  capacity       Int?
+  streamUrl      String?
+  recordingUrl   String?
+  skillLevel     SkillLevel
+  prerequisites  String?
+
+  instructor     User          @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  reservations   Reservation[]
+  media          Media[]
+
+  @@index([startTime])
+  @@index([instructorId])
+}
+
+model Reservation {
+  id           String     @id @default(cuid())
+  workshopId   String
+  userId       String
+  status       ReservationStatus
+  createdAt    DateTime   @default(now())
+
+  workshop     Workshop   @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workshopId, userId])
+}
+
+
+// QUIZ
+
+model Quiz {
+  id          String    @id @default(cuid())
+  lessonId    String    @unique
+  title       String
+  passingScore Int?
+  randomized  Boolean   @default(false)
+
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  submissions QuizSubmission[]
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  quizId      String
+  text        String
+  type        QuestionType
+  options     QuestionOption[]
+
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+}
+
+model QuestionOption {
+  id         String  @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean @default(false)
+
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model QuizSubmission {
+  id          String   @id @default(cuid())
+  quizId      String
+  userId      String
+  score       Int?
+  submittedAt DateTime @default(now())
+
+  quiz        Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@index([userId])
+}
+
+
+// REWIEW
+
+model Review {
+  id          String   @id @default(cuid())
+  userId      String
+  targetType  ReviewTarget  //LESSON, COURSE, INSTRUCTOR
+  lessonId    String?
+  courseId    String?
+  instructorId String?
+  rating      Int      @db.SmallInt
+  comment     String?
+  photoUrl    String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson?  @relation("LessonReviews", fields: [lessonId], references: [id], onDelete: Cascade)
+  course      Course?  @relation("CourseReviews", fields: [courseId], references: [id], onDelete: Cascade)
+  instructor  User?    @relation("InstructorReviews", fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@index([targetType])
+  @@index([rating])
+  @@index([userId])
+  @@index([lessonId])
+  @@index([courseId])
+  @@index([instructorId])
+}
+
+
+// KOMENTARI I Q&A
+
+model Comment {
+  id          String         @id @default(cuid())
+  lessonId    String
+  userId      String
+  content     String
+  isQuestion  Boolean         @default(false)
+  status      CommentStatus   @default(PENDING)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  lesson      Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies     CommentReply[]
+
+  @@index([lessonId])
+  @@index([status])
+  @@index([userId])
+}
+
+model CommentReply {
+  id          String       @id @default(cuid())
+  commentId   String
+  userId      String
+  content     String
+  createdAt   DateTime     @default(now())
+
+  comment     Comment      @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([userId])
+}
+
+
+
+// PROGRESS -> CERTIFICATE
+
+model Progress {
+  id          String   @id @default(cuid())
+  userId      String
+  courseId    String?
+  lessonId    String?
+  completed   Boolean  @default(false)
+  percent     Int      @default(0)
+  timeSpentSec Int     @default(0)
+  lastAccessedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson      Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId, lessonId]) 
+  @@index([completed])
+  @@index([userId])
+  @@index([courseId])
+  @@index([lessonId])
+
+}
+
+model Certificate {
+  id          String   @id @default(cuid())
+  userId      String
+  courseId    String
+  issuedAt    DateTime @default(now())
+  pdfUrl      String?
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([courseId])
+}
+
+
+// MEDIA
+
+model Media {
+  id          String     @id @default(cuid())
+  url         String
+  type        MediaType
+  filename    String?
+  createdAt   DateTime   @default(now())
+
+  courseId    String?
+  lessonId    String?
+  workshopId  String?
+
+  course      Course?    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson      Lesson?    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  workshop    Workshop?  @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([lessonId])
+  @@index([workshopId])
+}
+
+
+// Sustav za praćenje
+model InstructorFollow {
+  id            String   @id @default(cuid())
+  studentId     String
+  instructorId  String
+  createdAt     DateTime @default(now())
+
+  student       User @relation("StudentFollowing", fields: [studentId], references: [id], onDelete: Cascade)
+  instructor    User @relation("InstructorFollowers", fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, instructorId])
+  @@index([studentId])
+  @@index([instructorId])
+}
+
+// Notif sustav
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // WORKSHOP_REMINDER, NEW_LESSON, PROGRESS_SUMMARY, etc.
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  sentAt      DateTime @default(now())
+  scheduledFor DateTime?
+  metadata    Json?    // Additional context (workshopId, lessonId, etc.)
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([sentAt])
+}
+
+// Audit logovi
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String   // LOGIN, CREATE_COURSE, DELETE_USER, etc.
+  entityType  String?  // User, Course, Lesson, etc.
+  entityId    String?
+  metadata    Json?    // Additional details
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  user        User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}
+
+// Tagovi za organizaciju u CMSu
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String?  // cuisine, dietary, skill, equipment, etc.
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+}
+
