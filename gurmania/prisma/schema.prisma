@@ -76,7 +76,6 @@ model User {
   emailVerified         DateTime?
   image                 String?
   password              String?
-  passwordChangeRequired Boolean  @default(false)
   twoFactorEnabled      Boolean   @default(false)
   role                  Role      @default(STUDENT)
   isActive              Boolean   @default(true)
@@ -180,6 +179,30 @@ model VerificationToken {
   expires    DateTime
   
   @@id([identifier, token])
+}
+
+// Custom email verification tokens
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([email])
+  @@index([token])
+}
+
+// Password reset tokens
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([email])
+  @@index([token])
 }
 
 // Optional for WebAuthn support
