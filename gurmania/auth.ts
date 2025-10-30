@@ -61,55 +61,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // For OAuth providers
-      if (account?.provider === "google") {
+      // For all OAuth providers, automatically verify email
+      if (account && account.provider !== "credentials") {
         if (!user.email) return false;
 
-        const existingUser = await prisma.user.findUnique({
+        // Ensure the user exists in database
+        const dbUser = await prisma.user.findUnique({
           where: { email: user.email },
           include: { accounts: true },
         });
 
-        // If user exists but doesn't have a Google account linked
-        if (existingUser && !existingUser.accounts.some(acc => acc.provider === "google")) {
-          // Link the Google account to existing user
-          await prisma.account.create({
-            data: {
-              userId: existingUser.id,
-              type: account.type,
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-              access_token: account.access_token,
-              refresh_token: account.refresh_token,
-              expires_at: account.expires_at,
-              token_type: account.token_type,
-              scope: account.scope,
-              id_token: account.id_token,
-              session_state: account.session_state ? String(account.session_state) : null,
-            },
-          });
+        if (!dbUser) {
+          // This shouldn't happen as PrismaAdapter creates the user first
+          return false;
         }
 
-        // Mark email as verified for OAuth users
-        if (existingUser && !existingUser.emailVerified) {
-          await prisma.user.update({
-            where: { id: existingUser.id },
-            data: { emailVerified: new Date() },
-          });
+        // For Google OAuth: handle account linking
+        if (account.provider === "google") {
+          // If user exists but doesn't have a Google account linked, link it
+          if (!dbUser.accounts.some(acc => acc.provider === "google")) {
+            await prisma.account.create({
+              data: {
+                userId: dbUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: account.session_state ? String(account.session_state) : null,
+              },
+            });
+          }
         }
-      }
 
-      // For all OAuth providers, ensure email is verified
-      if (account && account.provider !== "credentials" && user.email) {
-        // Double-check and set emailVerified if not already set
-        const currentUser = await prisma.user.findUnique({
-          where: { email: user.email },
-          select: { id: true, emailVerified: true },
-        });
-        
-        if (currentUser && !currentUser.emailVerified) {
+        // Automatically verify email for ALL OAuth providers (new and existing users)
+        if (!dbUser.emailVerified) {
           await prisma.user.update({
-            where: { id: currentUser.id },
+            where: { id: dbUser.id },
             data: { emailVerified: new Date() },
           });
         }
