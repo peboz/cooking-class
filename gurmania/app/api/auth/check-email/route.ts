@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Check email error:', error);
+    console.error('Greška prilikom provjere e-maila:', error);
     return NextResponse.json(
       { error: 'Došlo je do greške prilikom provjere e-maila' },
       { status: 500 }

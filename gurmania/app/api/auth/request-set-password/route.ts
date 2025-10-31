@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     if (!session || !session.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Nemate pristup' },
         { status: 401 }
       );
     }
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'Korisnik nije pronađen' },
         { status: 404 }
       );
     }
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Check if user already has a password
     if (user.password) {
       return NextResponse.json(
-        { error: 'Password already set' },
+        { error: 'Lozinka je već postavljena' },
         { status: 400 }
       );
     }
@@ -39,13 +39,13 @@ export async function POST(request: NextRequest) {
     await sendSetPasswordEmail(session.user.email, token);
 
     return NextResponse.json(
-      { message: 'Password setup link sent to your email' },
+      { message: 'Link za postavljanje lozinke poslan na vašu email adresu' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Request set password error:', error);
+    console.error('Greška prilikom zahtjeva postavljanja lozinke:', error);
     return NextResponse.json(
-      { error: 'An error occurred while processing your request' },
+      { error: 'Došlo je do greške prilikom obrade vašeg zahtjeva' },
       { status: 500 }
     );
   }

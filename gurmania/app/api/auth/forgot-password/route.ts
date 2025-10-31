@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     if (!email) {
       return NextResponse.json(
-        { error: 'Email is required' },
+        { error: 'Email je obavezan' },
         { status: 400 }
       );
     }
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // Don't reveal if user exists or not for security
     if (!user) {
       return NextResponse.json(
-        { message: 'If an account exists with this email, you will receive a password reset link' },
+        { message: 'Ako postoji račun s ovom email adresom, dobiti ćete link za resetiranje lozinke' },
         { status: 200 }
       );
     }
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Check if user has a password (might be OAuth only)
     if (!user.password) {
       return NextResponse.json(
-        { message: 'If an account exists with this email, you will receive a password reset link' },
+        { message: 'Ako postoji račun s ovom email adresom, dobiti ćete link za resetiranje lozinke' },
         { status: 200 }
       );
     }
@@ -41,13 +41,13 @@ export async function POST(request: NextRequest) {
     await sendPasswordResetEmail(email, token);
 
     return NextResponse.json(
-      { message: 'If an account exists with this email, you will receive a password reset link' },
+      { message: 'Ako postoji račun s ovom email adresom, dobiti ćete link za resetiranje lozinke' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Greška prilikom resetiranja lozinke:', error);
     return NextResponse.json(
-      { error: 'An error occurred while processing your request' },
+      { error: 'Došlo je do greške prilikom obrade vašeg zahtjeva' },
       { status: 500 }
     );
   }

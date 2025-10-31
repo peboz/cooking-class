@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     if (!email) {
       return NextResponse.json(
-        { error: 'Email is required' },
+        { error: 'Email je obavezan' },
         { status: 400 }
       );
     }
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'Korisnik nije pronađen' },
         { status: 404 }
       );
     }
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // Check if email is already verified
     if (user.emailVerified) {
       return NextResponse.json(
-        { error: 'Email is already verified' },
+        { error: 'Email je već potvrđen' },
         { status: 400 }
       );
     }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const canResend = await canResendVerificationEmail(email);
     if (!canResend) {
       return NextResponse.json(
-        { error: 'Please wait 5 minutes before requesting another verification email' },
+        { error: 'Molimo pričekajte 5 minuta prije zahtjeva za novu potvrdu emaila' },
         { status: 429 }
       );
     }
@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Resend verification error:', error);
+    console.error('Greška prilikom ponovnog slanja potvrde emaila:', error);
     return NextResponse.json(
-      { error: 'An error occurred while sending verification email' },
+      { error: 'Došlo je do greške prilikom slanja potvrde emaila' },
       { status: 500 }
     );
   }
