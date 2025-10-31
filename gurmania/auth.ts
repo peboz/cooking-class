@@ -61,45 +61,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // For all OAuth providers, automatically verify email
+      // For OAuth providers, allow sign-in and let PrismaAdapter handle user creation
+      // Email verification will be handled in the jwt callback
       if (account && account.provider !== "credentials") {
-        if (!user.email) return false;
+        return true;
+      }
 
-        // Ensure the user exists in database
+      // For credentials provider, validation is already done in authorize()
+      return true;
+    },
+    async jwt({ token, user, account, profile, trigger }) {
+      // When user signs in with OAuth, verify their email automatically
+      if (account && account.provider !== "credentials" && user?.email) {
+        // Find the user in database (now it should exist, created by PrismaAdapter)
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email },
-          include: { accounts: true },
         });
 
-        if (!dbUser) {
-          // This shouldn't happen as PrismaAdapter creates the user first
-          return false;
-        }
-
-        // For Google OAuth: handle account linking
-        if (account.provider === "google") {
-          // If user exists but doesn't have a Google account linked, link it
-          if (!dbUser.accounts.some(acc => acc.provider === "google")) {
-            await prisma.account.create({
-              data: {
-                userId: dbUser.id,
-                type: account.type,
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                access_token: account.access_token,
-                refresh_token: account.refresh_token,
-                expires_at: account.expires_at,
-                token_type: account.token_type,
-                scope: account.scope,
-                id_token: account.id_token,
-                session_state: account.session_state ? String(account.session_state) : null,
-              },
-            });
-          }
-        }
-
-        // Automatically verify email for ALL OAuth providers (new and existing users)
-        if (!dbUser.emailVerified) {
+        if (dbUser && !dbUser.emailVerified) {
+          // Automatically verify email for OAuth users
           await prisma.user.update({
             where: { id: dbUser.id },
             data: { emailVerified: new Date() },
@@ -107,13 +87,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      return true;
+      return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
       }
       return session;
+    },
+  },
+  events: {
+    async linkAccount({ user, account, profile }) {
+      // When an account is linked, verify the email automatically for OAuth providers
+      if (account.provider !== "credentials" && user.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        });
+
+        if (dbUser && !dbUser.emailVerified) {
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: { emailVerified: new Date() },
+          });
+        }
+      }
     },
   },
   session: {
