@@ -1,0 +1,47 @@
+name: CD - Development
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            cd /opt/gurmania/deployment/scripts
+            ./deploy-dev.sh
+
+      - name: Health Check
+        run: |
+          sleep 10
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://dev.gurmania.gorstaci.org)
+          if [ $response -eq 200 ] || [ $response -eq 301 ] || [ $response -eq 302 ]; then
+            echo "✅ Health check passed - Status: $response"
+          else
+            echo "❌ Health check failed - Status: $response"
+            exit 1
+          fi
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "🎉 Development deployment successful!"
+          else
+            echo "❌ Development deployment failed!"
+          fi
+
