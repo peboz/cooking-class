@@ -48,7 +48,7 @@ function ResendVerificationContent() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
             <CardDescription>
-              We've sent a new verification link to <strong>{email}</strong>
+              We&apos;ve sent a new verification link to <strong>{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

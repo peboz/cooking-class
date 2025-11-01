@@ -9,13 +9,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 function VerifyEmailContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
-  const [message, setMessage] = useState("")
+  const [status, setStatus] = useState<"loading" | "success" | "error">(() => 
+    !token ? "error" : "loading"
+  )
+  const [message, setMessage] = useState(() => 
+    !token ? "Invalid verification link" : ""
+  )
 
   useEffect(() => {
     if (!token) {
-      setStatus("error")
-      setMessage("Invalid verification link")
       return
     }
 
