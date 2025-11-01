@@ -49,7 +49,9 @@ services:
       - gurmania-dev
     command: >
       sh -c "
+        echo '🔄 Running Prisma migrations...' &&
         npx prisma migrate deploy &&
+        echo '✅ Migrations complete!' &&
         npm start
       "
 
