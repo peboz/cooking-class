@@ -2,7 +2,7 @@ import { prisma } from '@/prisma';
 import crypto from 'crypto';
 
 const TOKEN_EXPIRY_HOURS = 24;
-const RESEND_COOLDOWN_MINUTES = 5;
+const RESEND_COOLDOWN_MINUTES = 60; // 1 hour cooldown for resending verification emails
 
 export async function generateVerificationToken(email: string) {
   const token = crypto.randomBytes(32).toString('hex');
@@ -52,14 +52,14 @@ export async function verifyEmailToken(token: string) {
   });
 
   if (!tokenRecord) {
-    return { error: 'Invalid token' };
+    return { error: 'Neispravan token' };
   }
 
   if (tokenRecord.expires < new Date()) {
     await prisma.emailVerificationToken.delete({
       where: { token },
     });
-    return { error: 'Token expired' };
+    return { error: 'Token je istekao' };
   }
 
   return { email: tokenRecord.email };
@@ -71,14 +71,14 @@ export async function verifyPasswordResetToken(token: string) {
   });
 
   if (!tokenRecord) {
-    return { error: 'Invalid token' };
+    return { error: 'Neispravan token' };
   }
 
   if (tokenRecord.expires < new Date()) {
     await prisma.passwordResetToken.delete({
       where: { token },
     });
-    return { error: 'Token expired' };
+    return { error: 'Token je istekao' };
   }
 
   return { email: tokenRecord.email };
@@ -99,6 +99,29 @@ export async function canResendVerificationEmail(email: string) {
   );
 
   return new Date() >= cooldownEnd;
+}
+
+export async function getVerificationEmailCooldownInfo(email: string) {
+  const latestToken = await prisma.emailVerificationToken.findFirst({
+    where: { email },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (!latestToken) {
+    return { canResend: true, nextResendTime: null };
+  }
+
+  const cooldownEnd = new Date(
+    latestToken.createdAt.getTime() + RESEND_COOLDOWN_MINUTES * 60 * 1000
+  );
+  const now = new Date();
+  const canResend = now >= cooldownEnd;
+
+  return {
+    canResend,
+    nextResendTime: canResend ? null : cooldownEnd,
+    lastSentTime: latestToken.createdAt,
+  };
 }
 
 export async function deleteVerificationToken(token: string) {

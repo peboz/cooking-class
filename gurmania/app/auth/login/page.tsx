@@ -18,6 +18,9 @@ type EmailCheckResult = {
   name?: string
   message?: string
   error?: string
+  canResend?: boolean
+  nextResendTime?: string | null
+  lastSentTime?: string | null
 }
 
 export default function LoginPage() {
@@ -28,6 +31,8 @@ export default function LoginPage() {
   const [emailCheckResult, setEmailCheckResult] = useState<EmailCheckResult | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,7 +63,8 @@ export default function LoginPage() {
       }
 
       if (!data.verified) {
-        setError(data.message || "Molimo verificirajte vašu e-mail adresu")
+        // Don't set as error - we'll show a special UI for unverified emails
+        // The email check result will be used to render the resend UI
         setLoading(false)
         return
       }
@@ -117,6 +123,63 @@ export default function LoginPage() {
     setPassword("")
     setError("")
     setEmailCheckResult(null)
+    setResendSuccess(false)
+  }
+
+  const handleResendVerification = async () => {
+    setResendLoading(true)
+    setError("")
+    setResendSuccess(false)
+
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Došlo je do greške prilikom slanja e-maila")
+      } else {
+        setResendSuccess(true)
+        // Update the email check result to reflect the new cooldown
+        if (emailCheckResult) {
+          setEmailCheckResult({
+            ...emailCheckResult,
+            canResend: false,
+            nextResendTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            lastSentTime: new Date().toISOString(),
+          })
+        }
+      }
+    } catch (err) {
+      setError("Došlo je do greške. Molimo pokušajte ponovno.")
+    } finally {
+      setResendLoading(false)
+    }
+  }
+
+  const getTimeRemaining = (nextResendTime: string | null | undefined) => {
+    if (!nextResendTime) return ""
+    
+    const now = new Date()
+    const next = new Date(nextResendTime)
+    const diffMs = next.getTime() - now.getTime()
+    
+    if (diffMs <= 0) return ""
+    
+    const minutes = Math.floor(diffMs / 60000)
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60)
+      const remainingMinutes = minutes % 60
+      if (remainingMinutes > 0) {
+        return `${hours}h ${remainingMinutes}min`
+      }
+      return `${hours}h`
+    }
+    return `${minutes} minuta`
   }
 
   const getProviderName = (provider: string) => {
@@ -187,7 +250,12 @@ export default function LoginPage() {
                     type="email"
                     placeholder="m@primjer.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setEmailCheckResult(null)
+                      setError("")
+                      setResendSuccess(false)
+                    }}
                     required
                     disabled={loading}
                     autoFocus
@@ -197,6 +265,40 @@ export default function LoginPage() {
                 {error && (
                   <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
                     {error}
+                  </div>
+                )}
+
+                {emailCheckResult && !emailCheckResult.verified && emailCheckResult.exists && (
+                  <div className="rounded-md bg-amber-50 border border-amber-200 p-4 space-y-3">
+                    <div className="text-sm text-amber-900">
+                      <p className="font-medium mb-1">E-mail nije potvrđen</p>
+                      <p>{emailCheckResult.message}</p>
+                    </div>
+                    
+                    {resendSuccess && (
+                      <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+                        Verificijski e-mail je uspješno poslan! Provjerite svoju poštu.
+                      </div>
+                    )}
+
+                    {emailCheckResult.canResend ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleResendVerification}
+                        disabled={resendLoading}
+                      >
+                        {resendLoading ? "Šaljem..." : "Pošalji potvrdu ponovo"}
+                      </Button>
+                    ) : (
+                      <div className="text-sm text-amber-700">
+                        <p>
+                          Verificijski e-mail je već poslan. Možete zatražiti novi za{" "}
+                          <strong>{getTimeRemaining(emailCheckResult.nextResendTime)}</strong>.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 

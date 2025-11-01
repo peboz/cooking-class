@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { error: 'Token is required' },
+        { error: 'Token je obavezan' },
         { status: 400 }
       );
     }
@@ -34,13 +34,13 @@ export async function POST(request: NextRequest) {
     await deleteVerificationToken(token);
 
     return NextResponse.json(
-      { message: 'Email verified successfully' },
+      { message: 'E-mail je uspješno potvrđen' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Email verification error:', error);
+    console.error('Greška prilikom potvrde e-maila:', error);
     return NextResponse.json(
-      { error: 'An error occurred during email verification' },
+      { error: 'Došlo je do greške prilikom potvrde e-maila' },
       { status: 500 }
     );
   }

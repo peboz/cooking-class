@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/prisma';
+import { getVerificationEmailCooldownInfo } from '@/lib/tokens';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,11 +35,16 @@ export async function POST(request: NextRequest) {
 
     // Check if email is verified
     if (!user.emailVerified) {
+      const cooldownInfo = await getVerificationEmailCooldownInfo(email);
+      
       return NextResponse.json(
         {
           exists: true,
           verified: false,
           message: 'Molimo potvrdite svoj e-mail kako biste aktivirali račun',
+          canResend: cooldownInfo.canResend,
+          nextResendTime: cooldownInfo.nextResendTime,
+          lastSentTime: cooldownInfo.lastSentTime,
         },
         { status: 200 }
       );

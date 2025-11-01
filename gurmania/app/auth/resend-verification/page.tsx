@@ -68,19 +68,19 @@ function ResendVerificationContent() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Resend verification email</CardTitle>
+          <CardTitle className="text-2xl font-bold">Ponovno slanje potvrde e-maila</CardTitle>
           <CardDescription>
-            Enter your email address and we'll send you a new verification link
+            Unesite svoju email adresu i poslat ćemo novi link za potvrdu
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email adresa</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="m@primjer.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -95,13 +95,13 @@ function ResendVerificationContent() {
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Sending..." : "Send verification email"}
+              {loading ? "Šaljem..." : "Pošalji potvrdu e-maila"}
             </Button>
           </form>
 
           <div className="text-center text-sm">
             <Link href="/auth/login" className="text-muted-foreground hover:text-primary">
-              Back to login
+              Natrag na prijavu
             </Link>
           </div>
         </CardContent>
@@ -116,8 +116,8 @@ export default function ResendVerificationPage() {
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Resend verification</CardTitle>
-            <CardDescription>Loading...</CardDescription>
+            <CardTitle className="text-2xl font-bold">Ponovno slanje potvrde e-maila</CardTitle>
+            <CardDescription>Učitavanje...</CardDescription>
           </CardHeader>
         </Card>
       </div>

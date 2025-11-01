@@ -50,9 +50,9 @@ function VerifyEmailContent() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">
-            {status === "loading" && "Verifying your email..."}
-            {status === "success" && "Email verified!"}
-            {status === "error" && "Verification failed"}
+            {status === "loading" && "Provjeravamo vaš e-mail..."}
+            {status === "success" && "E-mail potvrđen!"}
+            {status === "error" && "Potvrda e-maila neuspješna"}
           </CardTitle>
           <CardDescription>
             {status === "loading" && "Molimo pričekajte dok provjeravamo vaš e-mail."}

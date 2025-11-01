@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const canResend = await canResendVerificationEmail(email);
     if (!canResend) {
       return NextResponse.json(
-        { error: 'Molimo pričekajte 5 minuta prije zahtjeva za novu potvrdu emaila' },
+        { error: 'Molimo pričekajte 1 sat prije zahtjeva za novu potvrdu emaila' },
         { status: 429 }
       );
     }
