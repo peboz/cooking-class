@@ -85,24 +85,43 @@ else
     git pull origin dev
 fi
 
-# Setup Nginx
-echo "🌐 Setting up Nginx..."
-sudo cp /opt/gurmania/deployment/nginx/gurmania.conf /etc/nginx/sites-available/gurmania
-sudo ln -sf /etc/nginx/sites-available/gurmania /etc/nginx/sites-enabled/gurmania
+# Setup Nginx - Create temporary HTTP-only config for SSL verification
+echo "🌐 Setting up temporary Nginx configuration..."
+sudo tee /etc/nginx/sites-available/gurmania-temp > /dev/null <<'EOF'
+server {
+    listen 80;
+    server_name dev.gurmania.gorstaci.org gurmania.gorstaci.org;
+    
+    location / {
+        return 200 "OK - Gurmania Setup";
+        add_header Content-Type text/plain;
+    }
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+}
+EOF
+
+sudo ln -sf /etc/nginx/sites-available/gurmania-temp /etc/nginx/sites-enabled/gurmania-temp
 sudo rm -f /etc/nginx/sites-enabled/default
+sudo mkdir -p /var/www/html
 
 # Test Nginx configuration
 sudo nginx -t
+sudo systemctl reload nginx
 
 # Install Certbot for SSL
 echo "🔐 Installing Certbot for SSL certificates..."
-sudo snap install core
-sudo snap refresh core
-sudo snap install --classic certbot
-sudo ln -sf /snap/bin/certbot /usr/bin/certbot
-
-# Note: SSL certificates will be obtained after Nginx is configured
-echo "⚠️  SSL certificate setup will be done in the next step"
+if ! command -v certbot &> /dev/null; then
+    sudo snap install core
+    sudo snap refresh core
+    sudo snap install --classic certbot
+    sudo ln -sf /snap/bin/certbot /usr/bin/certbot
+    echo "✅ Certbot installed"
+else
+    echo "✅ Certbot already installed"
+fi
 
 # Setup cron for database backups
 echo "⏰ Setting up automated database backups..."
@@ -117,20 +136,39 @@ echo ""
 echo "✨ VPS setup completed successfully!"
 echo ""
 echo "📝 Next steps:"
-echo "1. Create .env files:"
-echo "   - Copy deployment/.env.dev.example to deployment/.env.dev"
-echo "   - Copy deployment/.env.prod.example to deployment/.env.prod"
-echo "   - Fill in the actual values"
 echo ""
-echo "2. Obtain SSL certificates:"
+echo "1. Obtain SSL certificates:"
 echo "   sudo certbot --nginx -d gurmania.gorstaci.org -d dev.gurmania.gorstaci.org"
 echo ""
-echo "3. Setup GitHub Actions secrets with your VPS SSH key"
+echo "2. Apply final Nginx configuration with SSL:"
+echo "   sudo rm /etc/nginx/sites-enabled/gurmania-temp"
+echo "   sudo ln -sf /etc/nginx/sites-available/gurmania /etc/nginx/sites-enabled/gurmania"
+echo "   sudo nginx -t"
+echo "   sudo systemctl reload nginx"
 echo ""
-echo "4. Test deployments:"
-echo "   - cd /opt/gurmania/deployment/scripts"
-echo "   - ./deploy-dev.sh"
-echo "   - ./deploy-prod.sh"
+echo "3. Create .env files:"
+echo "   cd /opt/gurmania/deployment"
+echo "   cp .env.dev.example .env.dev"
+echo "   cp .env.prod.example .env.prod"
+echo "   nano .env.dev  # Fill in actual values"
+echo "   nano .env.prod # Fill in actual values (use DIFFERENT passwords!)"
+echo "   chmod 600 .env.dev .env.prod"
+echo ""
+echo "4. Generate NEXTAUTH_SECRET for both environments:"
+echo "   openssl rand -base64 32"
+echo ""
+echo "5. Deploy the applications:"
+echo "   cd /opt/gurmania/deployment/scripts"
+echo "   ./deploy-dev.sh"
+echo "   ./deploy-prod.sh"
+echo ""
+echo "6. Setup GitHub Actions secrets:"
+echo "   - VPS_HOST: Your VPS IP address"
+echo "   - VPS_USER: Your SSH username"
+echo "   - VPS_SSH_KEY: Generate with 'ssh-keygen -t ed25519 -C github-actions'"
+echo "   - VPS_PORT: 22"
+echo ""
+echo "📚 For detailed instructions, see: /opt/gurmania/deployment/DEPLOYMENT_GUIDE.md"
 echo ""
 echo "⚠️  Remember to log out and log back in for Docker group changes to take effect!"
 
