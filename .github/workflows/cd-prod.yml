@@ -9,6 +9,7 @@ jobs:
   deploy-prod:
     name: Deploy to Production
     runs-on: ubuntu-latest
+    environment: default
     
     steps:
       - name: Checkout repository

@@ -9,6 +9,7 @@ jobs:
   deploy-dev:
     name: Deploy to Development
     runs-on: ubuntu-latest
+    environment: default
     
     steps:
       - name: Checkout repository
