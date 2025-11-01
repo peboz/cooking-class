@@ -44,3 +44,5 @@ docker image prune -f
 
 echo "✨ DEV deployment completed successfully!"
 
+exit 0
+

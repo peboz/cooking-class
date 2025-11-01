@@ -44,3 +44,5 @@ docker image prune -f
 
 echo "✨ PRODUCTION deployment completed successfully!"
 
+exit 0
+
