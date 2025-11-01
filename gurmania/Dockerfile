@@ -17,8 +17,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma Client (with dummy DATABASE_URL for build time)
+# Set the correct binary target for Alpine Linux
 ENV DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
-RUN npx prisma generate
+RUN npx prisma generate --generator client
 
 # Build Next.js application
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -40,6 +41,9 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
+
+# Copy generated Prisma client (includes engine binaries)
+COPY --from=builder /app/app/generated ./app/generated
 
 # Copy built application
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
