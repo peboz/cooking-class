@@ -39,14 +39,26 @@ jobs:
 
       - name: Health Check
         run: |
-          sleep 10
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://gurmania.gorstaci.org)
-          if [ $response -eq 200 ] || [ $response -eq 301 ] || [ $response -eq 302 ]; then
-            echo "✅ Health check passed - Status: $response"
-          else
-            echo "❌ Health check failed - Status: $response"
-            exit 1
-          fi
+          echo "⏳ Waiting for application to be ready..."
+          max_attempts=30
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://gurmania.gorstaci.org || echo "000")
+            
+            if [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "302" ]; then
+              echo "✅ Health check passed - Status: $response (attempt $((attempt + 1)))"
+              exit 0
+            fi
+            
+            attempt=$((attempt + 1))
+            echo "⏳ Attempt $attempt/$max_attempts - Status: $response - Retrying in 5s..."
+            sleep 5
+          done
+          
+          echo "❌ Health check failed after $max_attempts attempts"
+          echo "Last response code: $response"
+          exit 1
 
       - name: Notify deployment status
         if: always()
