@@ -31,7 +31,7 @@ sleep 10
 if docker ps | grep -q "gurmania-app-prod"; then
     echo "✅ PRODUCTION deployment successful!"
     echo "📊 Container status:"
-    docker ps | grep gurmania-prod
+    docker ps --filter "name=gurmania" || true
 else
     echo "❌ PRODUCTION deployment failed!"
     docker-compose -f docker-compose.prod.yml logs
