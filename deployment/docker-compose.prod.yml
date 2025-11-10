@@ -29,7 +29,7 @@ services:
       postgres-prod:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-prod:5432/${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL} # staro, promjenjeno zbog posebnog znaka u lozinci: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-prod:5432/${POSTGRES_DB}
       NEXTAUTH_URL: https://gurmania.gorstaci.org
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       AUTH_TRUST_HOST: "true"
