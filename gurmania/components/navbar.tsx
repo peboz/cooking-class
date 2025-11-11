@@ -20,7 +20,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { ProfileSettingsDialog } from "@/components/profile-settings-dialog"
-import { Search, User, Settings, LogOut, ChefHat } from "lucide-react"
+import { Search, Settings, LogOut, ChefHat } from "lucide-react"
 import { signOut } from "next-auth/react"
 
 interface NavbarProps {
@@ -178,5 +178,3 @@ export function Navbar({ user }: NavbarProps) {
     </>
   )
 }
-
-
