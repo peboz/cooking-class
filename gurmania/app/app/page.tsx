@@ -2,15 +2,8 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { BookOpen, Sparkles, Video, Star, Clock, ChefHat } from "lucide-react"
-import { 
-  SidebarProvider, 
-  Sidebar, 
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar"
+import { BookOpen, Sparkles, Video, Clock } from "lucide-react"
+// Removed unused sidebar imports
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -144,13 +137,13 @@ export default async function AppPage() {
           {/* Section: Moglo bi Vam se svidjeti... */}
           <section className="mb-10">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Sparkles className="!size-6.5" />
+              <Sparkles className="!w-[1.625rem] !h-[1.625rem]" />
               Moglo bi Vam se svidjeti...
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {coursesSet1.map((course, idx) => (
+              {coursesSet1.map((course) => (
                 <Card
-                  key={idx}
+                  key={course.title + '-' + course.instructor}
                   className="flex flex-row items-center gap-0 overflow-hidden transform transition duration-200 ease-out hover:scale-105 hover:shadow-xl hover:border-orange-200/70 hover:bg-card/90 active:translate-y-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/40"
                 >
                   <div className="w-36 h-28 flex-shrink-0 pl-3">
@@ -208,7 +201,7 @@ export default async function AppPage() {
           {/* Section: Live Radionice */}
           <section className="mb-10">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Video className="!size-6.5" />
+              <Video className="!size-6" />
               Live Radionice
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
