@@ -130,49 +130,49 @@ export default async function AppPage() {
       {/* Navigation */}
       <Navbar user={session.user} />
     
-        <main className="flex-1 p-6 overflow-auto">
-          {/* Section: Moglo bi Vam se svidjeti... */}
-          <section className="mb-10">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Sparkles className="!w-[1.625rem] !h-[1.625rem]" />
-              Moglo bi Vam se svidjeti...
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {coursesSet1.map((course) => (
-                <CourseCard key={course.title + '-' + course.instructor} course={course} />
-              ))}
-            </div>
-          </section>
+      <main className="flex-1 p-6 overflow-auto">
+        {/* Section: Moglo bi Vam se svidjeti... */}
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Sparkles className="!w-[1.625rem] !h-[1.625rem]" />
+            Moglo bi Vam se svidjeti...
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {coursesSet1.map((course) => (
+              <CourseCard key={course.title + '-' + course.instructor} course={course} />
+            ))}
+          </div>
+        </section>
 
-          {/* Section: Vaši tečajevi */}
-          <section className="mb-10">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <BookOpen className="!w-[1.625rem] !h-[1.625rem]" />
-              Vaši tečajevi
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {coursesSet2.map((course) => (
-                <CourseCard key={course.title + '-' + course.instructor} course={course} />
-              ))}
-            </div>
-          </section>
+        {/* Section: Vaši tečajevi */}
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <BookOpen className="!w-[1.625rem] !h-[1.625rem]" />
+            Vaši tečajevi
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {coursesSet2.map((course) => (
+              <CourseCard key={course.title + '-' + course.instructor} course={course} />
+            ))}
+          </div>
+        </section>
 
-          {/* Section: Live Radionice */}
-          <section className="mb-10">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Video className="!w-6 !h-6" />
-              Live Radionice
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {liveWorkshops.map((course) => (
-                <CourseCard key={course.title + '-' + course.instructor} course={course} />
-              ))}
-            </div>
-          </section>
+        {/* Section: Live Radionice */}
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Video className="!w-6 !h-6" />
+            Live Radionice
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {liveWorkshops.map((course) => (
+              <CourseCard key={course.title + '-' + course.instructor} course={course} />
+            ))}
+          </div>
+        </section>
+      </main>
 
-          {/* Footer */}
-          <Footer />
-        </main>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
