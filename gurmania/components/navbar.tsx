@@ -20,7 +20,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { ProfileSettingsDialog } from "@/components/profile-settings-dialog"
-import { Search, User, Settings, LogOut } from "lucide-react"
+import { Search, Settings, LogOut, ChefHat } from "lucide-react"
 import { signOut } from "next-auth/react"
 
 interface NavbarProps {
@@ -68,10 +68,13 @@ export function Navbar({ user }: NavbarProps) {
 
   return (
     <>
-      <nav className="border-b">
+      <nav className="border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex h-16 items-center px-4 container mx-auto">
           {/* Left - Logo/Brand */}
-          <div className="font-semibold text-xl">Gurmania</div>
+          <div className="flex items-center gap-2">
+            <ChefHat className="w-8 h-8 text-orange-600" />
+            <span className="text-2xl font-bold">Gurmania</span>
+          </div>
 
           {/* Middle - Search */}
           <div className="flex-1 flex justify-center px-8">
@@ -175,4 +178,3 @@ export function Navbar({ user }: NavbarProps) {
     </>
   )
 }
-
