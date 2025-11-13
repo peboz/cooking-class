@@ -6,8 +6,13 @@ Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Progra
 Cilj ovog projekta je izrada platforme koja, povezivanjem s instruktorima, nudi korisnicima tečajeve kuhanja. Sadržaj na platformi bit će podijeljen po razini vještine, što ga čini pristupačnim za sve korisnike. Bit će omogućena dodatna personalizacija poput alergena, preferencija i drugih ograničenja u prehrani. Ova stranica će pokazati da svi mogu kuhati kroz detaljne instrukcije i lako omogućen kontakt između instruktora i korisnika. 
 
 # Funkcijski zahtjevi
-> Navedite ključne zahtjeve Vašeg projekta.
-
+* autentifikacija - korisnik mora moći napraviti, potvrditi, urediti te obrisati profil uz mogućnost OAuth 2.0 prijave i 2FA
+* personalizacija - korisnici moraju moći uređivati svoj profil, uključujući razinu vještine, prehrambene preferencije i upload osobne fotografije
+* CMS - instruktori moraju imati mogućnost upravljanja sadržajem koji proizvode za platformu
+* sustav je strukturiraj u tečajeve, module i lekcije
+* socijalna komponenta - korisnici moraju moći ostaviti recenzije i komentare te isti moraju biti moderirani
+* live radionice - integrirani meet servis (Jitsi Meet), sinkronizacija s kalendarima, slanje podsjetnika, dokumenti za pripremu i zadržavanje snimke nakon završetka
+* administracija - administratori moraju imati mogućnost verifikacije instruktora, suspenzije korisnika i pristupa analitičkim podacima kroz administratorsko sučelje
 
 # Tehnologije
 * TypeScript - programski jezik
