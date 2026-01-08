@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BookOpen, Sparkles, Video } from "lucide-react"
-import { CourseCard } from "@/components/course-card"
+import { CourseSection } from "@/components/course-section"
 
 const coursesSet1 = [
   {
@@ -132,43 +132,25 @@ export default async function AppPage() {
     
       <main className="flex-1 p-6 overflow-auto">
         {/* Section: Moglo bi Vam se svidjeti... */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Sparkles className="!w-[1.625rem] !h-[1.625rem]" />
-            Moglo bi Vam se svidjeti...
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {coursesSet1.map((course) => (
-              <CourseCard key={course.title + '-' + course.instructor} course={course} />
-            ))}
-          </div>
-        </section>
+        <CourseSection 
+          title="Moglo bi Vam se svidjeti..." 
+          icon={Sparkles} 
+          courses={coursesSet1} 
+        />
 
         {/* Section: Vaši tečajevi */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <BookOpen className="!w-[1.625rem] !h-[1.625rem]" />
-            Vaši tečajevi
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {coursesSet2.map((course) => (
-              <CourseCard key={course.title + '-' + course.instructor} course={course} />
-            ))}
-          </div>
-        </section>
+        <CourseSection 
+          title="Vaši tečajevi" 
+          icon={BookOpen} 
+          courses={coursesSet2} 
+        />
 
         {/* Section: Live Radionice */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Video className="!w-6 !h-6" />
-            Live Radionice
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {liveWorkshops.map((course) => (
-              <CourseCard key={course.title + '-' + course.instructor} course={course} />
-            ))}
-          </div>
-        </section>
+        <CourseSection 
+          title="Live Radionice" 
+          icon={Video} 
+          courses={liveWorkshops} 
+        />
       </main>
 
       {/* Footer */}
