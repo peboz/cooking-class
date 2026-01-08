@@ -18,7 +18,13 @@ export async function proxy(request: NextRequest) {
   ]
 
   // Protected routes (require authentication)
-  const protectedRoutes = ["/app"]
+  const protectedRoutes = ["/app", "/onboarding"]
+  
+  // Admin routes (require authentication - role check happens in layout)
+  const adminRoutes = ["/admin"]
+  
+  // Instructor routes (require authentication - instructor verification or admin check happens in layout)
+  const instructorRoutes = ["/app/instructor"]
 
   // Root path redirect logic
   if (pathname === "/") {
@@ -36,6 +42,12 @@ export async function proxy(request: NextRequest) {
 
   // Redirect non-logged in users away from protected pages
   if (!isLoggedIn && protectedRoutes.some((route) => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL("/auth/login", request.url))
+  }
+
+  // Redirect non-logged in users away from admin pages
+  // Note: Role-based authorization (ADMIN check) is handled in the admin layout
+  if (!isLoggedIn && adminRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 

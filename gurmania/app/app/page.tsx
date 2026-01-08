@@ -4,6 +4,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BookOpen, Sparkles, Video } from "lucide-react"
 import { CourseSection } from "@/components/course-section"
+import { prisma } from "@/prisma"
 
 const coursesSet1 = [
   {
@@ -125,10 +126,28 @@ export default async function AppPage() {
     redirect("/auth/login");
   }
 
+  // Check if user has completed onboarding (has a student profile)
+  // Skip check for instructors who might not have student profile
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: {
+      studentProfile: true,
+      instructorProfile: true,
+    },
+  });
+
+  // If user is not an instructor and doesn't have a student profile, redirect to onboarding
+  if (user && !user.studentProfile && user.role === 'STUDENT') {
+    redirect("/onboarding");
+  }
+
+  // Check if user is a verified instructor or admin
+  const isInstructor = user?.instructorProfile?.verified || user?.role === 'ADMIN';
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900 overflow-hidden">
       {/* Navigation */}
-      <Navbar user={session.user} />
+      <Navbar user={session.user} isInstructor={isInstructor} />
     
       <main className="flex-1 p-6 overflow-auto">
         {/* Section: Moglo bi Vam se svidjeti... */}

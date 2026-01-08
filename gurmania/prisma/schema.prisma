@@ -128,14 +128,26 @@ model StudentProfile {
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model InstructorProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  bio             String?
-  specializations String[]
-  verified        Boolean  @default(false)
+  id                      String              @id @default(cuid())
+  userId                  String              @unique
+  bio                     String?
+  specializations         String[]
+  verified                Boolean             @default(false)
+  verificationStatus      VerificationStatus  @default(PENDING)
+  verificationReason      String?
   verificationDocumentUrl String?
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 
