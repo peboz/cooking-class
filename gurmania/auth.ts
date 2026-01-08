@@ -93,6 +93,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
+        
+        // Fetch fresh user data from database (including updated image)
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub as string },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            role: true,
+          },
+        });
+
+        if (dbUser) {
+          session.user.name = dbUser.name;
+          session.user.email = dbUser.email!;
+          session.user.image = dbUser.image;
+          session.user.role = dbUser.role;
+        }
       }
       return session;
     },

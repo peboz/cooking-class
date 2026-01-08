@@ -22,6 +22,7 @@ import {
 import { ProfileSettingsDialog } from "@/components/profile-settings-dialog"
 import { Search, Settings, LogOut, ChefHat } from "lucide-react"
 import { signOut } from "next-auth/react"
+import Link from "next/link"
 
 interface NavbarProps {
   user?: {
@@ -29,9 +30,10 @@ interface NavbarProps {
     email?: string | null
     image?: string | null
   }
+  isInstructor?: boolean
 }
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ user, isInstructor }: NavbarProps) {
   const [open, setOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -117,6 +119,14 @@ export function Navbar({ user }: NavbarProps) {
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Postavke profila</span>
                 </DropdownMenuItem>
+                {isInstructor && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/app/instructor">
+                      <ChefHat className="mr-2 h-4 w-4" />
+                      <span>Instruktorski panel</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
