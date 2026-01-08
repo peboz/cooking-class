@@ -26,6 +26,11 @@ export async function proxy(request: NextRequest) {
   // Instructor routes (require authentication - instructor verification or admin check happens in layout)
   const instructorRoutes = ["/app/instructor"]
 
+  // First-time admin setup (public, but checks for admin existence internally)
+  if (pathname.startsWith("/first-admin-setup")) {
+    return NextResponse.next()
+  }
+
   // Root path redirect logic
   if (pathname === "/") {
     if (isLoggedIn) {

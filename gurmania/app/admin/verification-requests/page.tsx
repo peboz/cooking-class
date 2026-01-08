@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Eye, Clock, FileText } from "lucide-react";
+import { CheckCircle, XCircle, Clock, FileText } from "lucide-react";
 
 interface VerificationRequest {
   id: string;
@@ -45,6 +45,7 @@ export default function VerificationRequestsPage() {
 
   useEffect(() => {
     loadRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const loadRequests = async () => {
