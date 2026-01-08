@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/prisma';
+import { VerificationStatus } from '@/app/generated/prisma/client';
 
 // GET - List all verification requests
 export async function GET(request: NextRequest) {
@@ -17,9 +18,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // 'PENDING', 'APPROVED', 'REJECTED'
 
-    const whereClause: any = {};
-    if (status) {
-      whereClause.verificationStatus = status;
+    const whereClause: {
+      verificationStatus?: VerificationStatus;
+    } = {};
+    if (status && status in VerificationStatus) {
+      whereClause.verificationStatus = status as VerificationStatus;
     }
 
     const requests = await prisma.instructorProfile.findMany({

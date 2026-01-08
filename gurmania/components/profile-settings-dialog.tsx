@@ -60,7 +60,6 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState("")
   const [success, setSuccess] = React.useState("")
-  const [profileData, setProfileData] = React.useState<any>(null)
 
   // Profile state
   const [name, setName] = React.useState(user?.name || "")
@@ -98,14 +97,13 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
       const response = await fetch("/api/profile/student")
       if (response.ok) {
         const data = await response.json()
-        setProfileData(data.profile)
         setSkillLevel(data.profile.skillLevel || "")
         setDietaryPreferences(data.profile.dietaryPreferences || [])
         setAllergies(data.profile.allergies || [])
         setFavoriteCuisines(data.profile.favoriteCuisines || [])
       }
-    } catch (err) {
-      console.error("Error loading profile:", err)
+    } catch {
+      console.error("Error loading profile")
     }
   }
 
@@ -123,8 +121,8 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
       } else {
         setInstructorStatus({ exists: false })
       }
-    } catch (err) {
-      console.error("Error loading instructor status:", err)
+    } catch {
+      console.error("Error loading instructor status")
       setInstructorStatus({ exists: false })
     }
   }
@@ -184,7 +182,7 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
         setSuccess("")
         onOpenChange(false)
       }, 1500)
-    } catch (err) {
+    } catch {
       setError("Greška pri uploadu slike. Molimo pokušajte ponovno.")
     } finally {
       setUploadingImage(false)
@@ -230,7 +228,7 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
       setVerificationDocumentUrl(data.documentUrl)
       setSuccess("Dokument uspješno uploadan!")
       setTimeout(() => setSuccess(""), 3000)
-    } catch (err) {
+    } catch {
       setError("Greška pri uploadu dokumenta. Molimo pokušajte ponovno.")
     } finally {
       setUploadingDocument(false)
