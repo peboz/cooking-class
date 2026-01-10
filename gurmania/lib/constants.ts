@@ -64,3 +64,52 @@ export const CUISINE_TYPES = [
   'Hrvatska',
   'Balkanska',
 ] as const;
+
+// Difficulty levels for courses and lessons
+export const DIFFICULTY_LEVELS = [
+  { value: 'EASY', label: 'Lako' },
+  { value: 'MEDIUM', label: 'Srednje' },
+  { value: 'HARD', label: 'Teško' },
+] as const;
+
+// Measurement units for ingredients
+export const MEASUREMENT_UNITS = [
+  // Metric - Volume
+  'ml',
+  'l',
+  'dl',
+  
+  // Metric - Weight
+  'g',
+  'kg',
+  'mg',
+  
+  // Imperial - Volume
+  'tsp',
+  'tbsp',
+  'cup',
+  'fl oz',
+  'pint',
+  'quart',
+  'gallon',
+  
+  // Imperial - Weight
+  'oz',
+  'lb',
+  
+  // Count/Pieces
+  'kom',
+  'komad',
+  'komada',
+  'žlica',
+  'žličica',
+  'šalica',
+  'čaša',
+  'prstohvat',
+  'narezak',
+  'režanj',
+  'list',
+  
+  // Other
+  'po ukusu',
+] as const;

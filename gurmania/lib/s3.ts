@@ -84,3 +84,27 @@ export function generateProfilePictureKey(userId: string, filename: string): str
   const extension = filename.split('.').pop();
   return `profile-pictures/${userId}/${timestamp}.${extension}`;
 }
+
+/**
+ * Generate unique S3 key for course thumbnail
+ * @param courseId Course ID
+ * @param filename Original filename
+ * @returns S3 key
+ */
+export function generateCourseThumbnailKey(courseId: string, filename: string): string {
+  const timestamp = Date.now();
+  const extension = filename.split('.').pop();
+  return `course-thumbnails/${courseId}/${timestamp}.${extension}`;
+}
+
+/**
+ * Generate unique S3 key for lesson media (future use)
+ * @param lessonId Lesson ID
+ * @param filename Original filename
+ * @returns S3 key
+ */
+export function generateLessonMediaKey(lessonId: string, filename: string): string {
+  const timestamp = Date.now();
+  const extension = filename.split('.').pop();
+  return `lesson-media/${lessonId}/${timestamp}.${extension}`;
+}
