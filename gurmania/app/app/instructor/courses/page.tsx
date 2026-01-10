@@ -113,7 +113,7 @@ export default function InstructorCoursesPage() {
             const thumbnail = course.media?.find(m => m.type === 'IMAGE');
             
             return (
-              <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow p-0">
                 {thumbnail ? (
                   <div className="relative h-48 w-full">
                     <Image
@@ -129,7 +129,7 @@ export default function InstructorCoursesPage() {
                   </div>
                 )}
                 
-                <CardHeader>
+                <CardHeader className="p-6 pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="line-clamp-2">{course.title}</CardTitle>
                     <Badge variant={course.published ? 'default' : 'secondary'}>
@@ -143,7 +143,7 @@ export default function InstructorCoursesPage() {
                   )}
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-6 pb-6 pt-0">
                   <div className="flex gap-2 flex-wrap">
                     <Badge variant="outline">{getDifficultyLabel(course.difficulty)}</Badge>
                     {course.cuisineType && (

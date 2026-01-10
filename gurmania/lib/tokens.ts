@@ -52,7 +52,8 @@ export async function verifyEmailToken(token: string) {
   });
 
   if (!tokenRecord) {
-    return { error: 'Neispravan token' };
+    console.log('Token not found in database. Token:', token);
+    return { error: 'Neispravan ili već iskorišten token' };
   }
 
   if (tokenRecord.expires < new Date()) {

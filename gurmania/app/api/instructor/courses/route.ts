@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
             lessons: true,
           },
         },
+        media: true,
       },
       orderBy: {
         updatedAt: 'desc',

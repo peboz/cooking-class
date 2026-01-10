@@ -86,11 +86,16 @@ function VerifyEmailContent() {
                 {message}
               </div>
               <p className="text-sm text-muted-foreground">
-                Link za potvrdu možda je istekao ili je neispravan.
+                Link za potvrdu možda je već iskorišten, istekao ili je neispravan.
               </p>
-              <Button asChild className="w-full" variant="outline">
-                <Link href="/auth/resend-verification">Zatraži novi link za potvrdu</Link>
-              </Button>
+              <div className="space-y-2">
+                <Button asChild className="w-full" variant="outline">
+                  <Link href="/auth/resend-verification">Zatraži novi link za potvrdu</Link>
+                </Button>
+                <Button asChild className="w-full" variant="ghost">
+                  <Link href="/auth/login">Povratak na prijavu</Link>
+                </Button>
+              </div>
             </>
           )}
         </CardContent>

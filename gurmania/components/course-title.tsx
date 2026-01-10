@@ -2,8 +2,8 @@ interface Course {
   title: string
   instructor: string
   level: string
-  duration: string
-  rating: string
+  duration?: string
+  rating?: string
 }
 
 export function CourseTitle( {title, instructor, level, duration, rating} : Course ){
@@ -19,17 +19,21 @@ export function CourseTitle( {title, instructor, level, duration, rating} : Cour
             <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Nivo</span>
             <span className="text-base font-semibold text-gray-900 dark:text-white">{level}</span>
           </div>
-          <div className="flex items-center justify-between bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-3 shadow-sm">
-            <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Trajanje</span>
-            <span className="text-base font-semibold text-gray-900 dark:text-white">{duration}</span>
-          </div>
-          <div className="flex items-center justify-between bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-3 shadow-sm">
-            <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Ocjena</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">⭐</span>
-              <span className="text-base font-bold text-gray-900 dark:text-white">{rating}</span>
+          {duration && (
+            <div className="flex items-center justify-between bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-3 shadow-sm">
+              <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Trajanje</span>
+              <span className="text-base font-semibold text-gray-900 dark:text-white">{duration}</span>
             </div>
-          </div>
+          )}
+          {rating && (
+            <div className="flex items-center justify-between bg-white/60 dark:bg-gray-800/60 rounded-lg px-4 py-3 shadow-sm">
+              <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Ocjena</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⭐</span>
+                <span className="text-base font-bold text-gray-900 dark:text-white">{rating}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Desktop: Horizontal layout */}
@@ -38,14 +42,18 @@ export function CourseTitle( {title, instructor, level, duration, rating} : Cour
             <span className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400">Nivo</span>
             <span className="text-lg">{level}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400">Trajanje</span>
-            <span className="text-lg">{duration}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">⭐</span>
-            <span className="text-lg font-semibold">{rating}</span>
-          </div>
+          {duration && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400">Trajanje</span>
+              <span className="text-lg">{duration}</span>
+            </div>
+          )}
+          {rating && (
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">⭐</span>
+              <span className="text-lg font-semibold">{rating}</span>
+            </div>
+          )}
         </div>
       </div>
     </section>

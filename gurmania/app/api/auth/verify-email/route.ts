@@ -18,9 +18,33 @@ export async function POST(request: NextRequest) {
     const result = await verifyEmailToken(token);
 
     if (result.error) {
+      console.error('Token verification failed:', result.error);
       return NextResponse.json(
         { error: result.error },
         { status: 400 }
+      );
+    }
+
+    if (!result.email) {
+      console.error('Token verification returned no email');
+      return NextResponse.json(
+        { error: 'Neispravan token' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user is already verified
+    const existingUser = await prisma.user.findUnique({
+      where: { email: result.email },
+      select: { emailVerified: true },
+    });
+
+    if (existingUser?.emailVerified) {
+      // Delete the token since it's no longer needed
+      await deleteVerificationToken(token).catch(() => {});
+      return NextResponse.json(
+        { message: 'E-mail je već potvrđen. Možete se prijaviti.' },
+        { status: 200 }
       );
     }
 

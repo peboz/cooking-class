@@ -1,39 +1,84 @@
 import Image from "next/image"
+import Link from "next/link"
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock } from "lucide-react"
+import { Clock, Star, BookOpen } from "lucide-react"
 
 interface CourseCardProps {
   course: {
+    id: string
     title: string
     instructor: string
     level: string
-    duration: string
-    rating: string
+    duration?: string
+    rating?: number
+    lessonCount?: number
     image: string
   }
+  href?: string
 }
 
-export function CourseCard({ course }: CourseCardProps) {
+export function CourseCard({ course, href }: CourseCardProps) {
+  const cardHref = href || `/app/courses/${course.id}`
+  
   return (
-    <Card
-      className="flex flex-row items-center gap-0 overflow-hidden transform transition duration-200 ease-out hover:scale-105 hover:shadow-xl hover:border-orange-200/70 hover:bg-card/90 active:translate-y-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/40"
-    >
-      <div className="w-36 h-28 flex-shrink-0 pl-3">
-        <div className="relative w-full h-full rounded-lg overflow-hidden">
-          <Image src={course.image} alt={course.title} fill unoptimized={true} className="object-cover" />
+    <Link href={cardHref} className="group block">
+      <Card className="overflow-hidden p-0 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/40">
+        {/* Image with blur gradient overlay */}
+        <div className="relative h-[140px] w-full overflow-hidden">
+          <Image 
+            src={course.image} 
+            alt={course.title} 
+            fill 
+            unoptimized={true} 
+            className="object-cover transition-transform duration-300 group-hover:scale-110" 
+          />
+          {/* Blur gradient overlay on bottom 40% */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
         </div>
-      </div>
-      <CardContent className="px-3 py-2 flex-1 flex flex-col justify-center">
-        <CardTitle className="text-sm mb-1">{course.title}</CardTitle>
-        <CardDescription className="text-xs text-gray-600 dark:text-gray-400 mb-2">{course.instructor}</CardDescription>
-        <div className="flex flex-col items-start gap-2 text-xs">
-          <Badge variant="secondary" className="text-xs">{course.level}</Badge>
-          <Badge variant="secondary" className="text-xs flex items-center gap-1">
-            <Clock className="w-3 h-3" /> {course.duration}
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
+
+        {/* Compact content section */}
+        <CardContent className="p-3 space-y-2">
+          {/* Title - max 2 lines */}
+          <CardTitle className="text-sm font-semibold line-clamp-2 leading-tight">
+            {course.title}
+          </CardTitle>
+
+          {/* Instructor - truncated */}
+          <CardDescription className="text-xs truncate">
+            {course.instructor}
+          </CardDescription>
+
+          {/* Badges inline */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary" className="text-xs px-2 py-0.5">
+              {course.level}
+            </Badge>
+            {course.duration && (
+              <Badge variant="outline" className="text-xs px-2 py-0.5 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {course.duration}
+              </Badge>
+            )}
+          </div>
+
+          {/* Meta info - rating and lesson count */}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {course.rating !== undefined && (
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                <span className="font-medium">{course.rating.toFixed(1)}</span>
+              </div>
+            )}
+            {course.lessonCount !== undefined && (
+              <div className="flex items-center gap-1">
+                <BookOpen className="w-3 h-3" />
+                <span>{course.lessonCount} lekcija</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   )
 }
