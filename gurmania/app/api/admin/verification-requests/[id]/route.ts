@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/prisma';
+import { sendInstructorApprovedEmail, sendInstructorRejectedEmail } from '@/lib/email';
 
 // PATCH - Approve or reject verification request
 export async function PATCH(
@@ -74,7 +75,24 @@ export async function PATCH(
       },
     });
 
-    // TODO: Send notification/email to the user about the decision
+    // Send email notification to the user about the decision
+    try {
+      const userEmail = instructorProfile.user.email;
+      if (!userEmail) {
+        console.error('User email is missing, cannot send notification');
+      } else {
+        const userName = instructorProfile.user.name ?? userEmail;
+        
+        if (action === 'APPROVE') {
+          await sendInstructorApprovedEmail(userEmail, userName);
+        } else if (action === 'REJECT' && reason) {
+          await sendInstructorRejectedEmail(userEmail, userName, reason);
+        }
+      }
+    } catch (emailError) {
+      // Log email error but don't fail the request
+      console.error('Failed to send notification email:', emailError);
+    }
 
     return NextResponse.json({
       success: true,
