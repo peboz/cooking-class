@@ -82,6 +82,11 @@ const data = {
           icon: Video,
         },
         {
+          title: "Komentari",
+          url: "/admin/comments",
+          icon: MessageSquare,
+        },
+        {
           title: "Recenzije",
           url: "/admin/reviews",
           icon: MessageSquare,
