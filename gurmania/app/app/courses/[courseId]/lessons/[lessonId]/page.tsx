@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { YouTubeEmbed } from '@/components/youtube-embed';
+import { CommentsSection } from '@/components/comments-section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -333,17 +334,30 @@ export default function LessonViewerPage() {
                   </Link>
                 </Button>
               ) : (
-                <Button 
-                  asChild
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <Link href={`/app/courses/${courseId}`}>
-                    Povratak na tečaj
-                    <Home className="h-4 w-4 ml-2" />
-                  </Link>
-                </Button>
+                <div className="flex-1" />
               )}
+            </div>
+
+            {/* Comments Section */}
+            {session?.user?.id && (
+              <CommentsSection
+                courseId={courseId}
+                lessonId={lessonId}
+                currentUserId={session.user.id}
+              />
+            )}
+
+            {/* Return to course button */}
+            <div className="flex justify-center">
+              <Button 
+                asChild
+                variant="outline"
+              >
+                <Link href={`/app/courses/${courseId}`}>
+                  <Home className="h-4 w-4 mr-2" />
+                  Povratak na tečaj
+                </Link>
+              </Button>
             </div>
           </div>
 
