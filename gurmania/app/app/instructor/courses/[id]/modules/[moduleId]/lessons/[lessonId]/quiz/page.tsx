@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -38,9 +38,10 @@ interface QuizFormData {
 export default function InstructorQuizPage({
   params,
 }: {
-  params: { courseId: string; moduleId: string; lessonId: string };
+  params: Promise<{ id: string; moduleId: string; lessonId: string }>;
 }) {
   const router = useRouter();
+  const { id, moduleId, lessonId } = use(params);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [existingQuizId, setExistingQuizId] = useState<string | null>(null);
@@ -70,7 +71,7 @@ export default function InstructorQuizPage({
     async function loadData() {
       try {
         // Load lesson info
-        const lessonRes = await fetch(`/api/lessons/${params.lessonId}`);
+        const lessonRes = await fetch(`/api/lessons/${lessonId}`);
         if (lessonRes.ok) {
           const lessonData = await lessonRes.json();
           setLessonTitle(lessonData.lesson.title);
@@ -107,7 +108,7 @@ export default function InstructorQuizPage({
     }
 
     loadData();
-  }, [params.lessonId]);
+  }, [lessonId]);
 
   const handleAddQuestion = () => {
     setFormData((prev) => ({
@@ -242,12 +243,14 @@ export default function InstructorQuizPage({
 
     try {
       const payload = {
-        lessonId: params.lessonId,
+        lessonId: lessonId,
         title: formData.title,
         passingScore: formData.passingScore ? parseInt(formData.passingScore) : null,
         randomized: formData.randomized,
         questions: formData.questions,
       };
+
+      console.log('Sending quiz payload:', JSON.stringify(payload, null, 2));
 
       let res;
       if (existingQuizId) {
@@ -267,8 +270,16 @@ export default function InstructorQuizPage({
       }
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save quiz');
+        let errorMessage = 'Failed to save quiz';
+        try {
+          const data = await res.json();
+          console.error('API Error Response:', data);
+          errorMessage = data.error || errorMessage;
+        } catch (e) {
+          console.error('Failed to parse error response');
+          errorMessage = `Server error: ${res.status} ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
@@ -306,7 +317,7 @@ export default function InstructorQuizPage({
         throw new Error(data.error || 'Failed to delete quiz');
       }
 
-      router.push(`/app/courses/${params.courseId}/modules/${params.moduleId}/lessons/${params.lessonId}`);
+      router.push(`/app/courses/${id}/modules/${moduleId}/lessons/${lessonId}`);
     } catch (err: any) {
       console.error('Error deleting quiz:', err);
       setError(err.message || 'Greška pri brisanju kviza');
@@ -334,13 +345,13 @@ export default function InstructorQuizPage({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/app/courses/${params.courseId}`}>
+            <BreadcrumbLink href={`/app/courses/${id}`}>
               {courseTitle}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/app/courses/${params.courseId}/modules/${params.moduleId}/lessons/${params.lessonId}`}>
+            <BreadcrumbLink href={`/app/courses/${id}/modules/${moduleId}/lessons/${lessonId}`}>
               {lessonTitle}
             </BreadcrumbLink>
           </BreadcrumbItem>
@@ -540,7 +551,7 @@ export default function InstructorQuizPage({
               variant="outline"
               asChild
             >
-              <Link href={`/app/courses/${params.courseId}/modules/${params.moduleId}/lessons/${params.lessonId}`}>
+              <Link href={`/app/courses/${id}/modules/${moduleId}/lessons/${lessonId}`}>
                 Odustani
               </Link>
             </Button>

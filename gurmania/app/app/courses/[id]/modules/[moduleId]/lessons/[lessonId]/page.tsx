@@ -16,7 +16,7 @@ import { Clock, ChefHat, AlertTriangle, CheckCircle2, PlayCircle } from 'lucide-
 
 interface PageProps {
   params: Promise<{
-    courseId: string;
+    id: string;
     moduleId: string;
     lessonId: string;
   }>;

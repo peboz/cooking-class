@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('Received quiz creation request:', JSON.stringify(body, null, 2));
     const { lessonId, title, passingScore, randomized, questions } = body;
 
     if (!lessonId || !title) {
@@ -66,8 +67,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create quiz with questions and options in a transaction
-    const quiz = await prisma.$transaction(async (tx) => {
-      const newQuiz = await tx.quiz.create({
+    const quiz = await prisma.$transaction(
+      async (tx) => {
+        const newQuiz = await tx.quiz.create({
         data: {
           lessonId,
           title,
@@ -99,13 +101,18 @@ export async function POST(request: NextRequest) {
       }
 
       return newQuiz;
-    });
+    },
+    {
+      maxWait: 10000, // 10 seconds max wait
+      timeout: 30000, // 30 seconds timeout
+    }
+  );
 
     return NextResponse.json({ quizId: quiz.id }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating quiz:', error);
     return NextResponse.json(
-      { error: 'Greška pri kreiranju kviza' },
+      { error: error?.message || 'Greška pri kreiranju kviza' },
       { status: 500 }
     );
   }

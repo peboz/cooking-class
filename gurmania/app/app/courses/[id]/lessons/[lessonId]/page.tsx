@@ -62,7 +62,7 @@ export default function LessonViewerPage() {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
-  const courseId = params.courseId as string;
+  const courseId = params.id as string;
   const lessonId = params.lessonId as string;
 
   const [lesson, setLesson] = useState<Lesson | null>(null);

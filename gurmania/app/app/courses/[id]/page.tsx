@@ -93,7 +93,7 @@ export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const courseId = params.courseId as string;
+  const courseId = params.id as string;
 
   const [course, setCourse] = useState<CourseData | null>(null);
   const [loading, setLoading] = useState(true);
