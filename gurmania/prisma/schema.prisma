@@ -246,6 +246,7 @@ model Course {
   cuisineType   String?
   tags          String[]
   published     Boolean  @default(false)
+  deletedAt     DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -258,6 +259,7 @@ model Course {
 
   @@index([title])
   @@index([published])
+  @@index([deletedAt])
   @@index([instructorId])
   @@index([cuisineType])
 }

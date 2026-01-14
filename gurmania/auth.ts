@@ -103,6 +103,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: true,
             image: true,
             role: true,
+            isActive: true,
           },
         });
 
@@ -111,6 +112,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user.email = dbUser.email!;
           session.user.image = dbUser.image;
           session.user.role = dbUser.role;
+          session.user.isActive = dbUser.isActive;
         }
       }
       return session;

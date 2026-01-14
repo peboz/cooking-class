@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateCourseDialog } from '@/components/create-course-dialog';
-import { Plus, BookOpen, Edit, Clock } from 'lucide-react';
+import { Plus, BookOpen, Edit, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 
 interface Course {
@@ -24,9 +25,12 @@ interface Course {
 }
 
 export default function InstructorCoursesPage() {
+  const { data: session } = useSession();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const isDeactivated = session?.user?.isActive === false;
 
   useEffect(() => {
     loadCourses();
@@ -78,6 +82,22 @@ export default function InstructorCoursesPage() {
 
   return (
     <div className="space-y-4">
+      {isDeactivated && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-red-900 dark:text-red-100">
+                Vaš račun je deaktiviran
+              </h3>
+              <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                Vaši tečajevi su trenutno skriveni od polaznika. Kontaktirajte administratore za više informacija.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Tečajevi</h1>
