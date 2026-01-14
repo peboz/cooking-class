@@ -103,10 +103,9 @@ export default function LessonViewerPage() {
 
       const data = await response.json();
       setLesson(data);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching lesson:', err);
-      setError(err.message || 'Greška pri učitavanju lekcije');
+      setError(err instanceof Error ? err.message : 'Greška pri učitavanju lekcije');
     } finally {
       setLoading(false);
     }

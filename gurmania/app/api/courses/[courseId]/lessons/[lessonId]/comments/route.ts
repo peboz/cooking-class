@@ -3,6 +3,11 @@ import { auth } from '@/auth';
 import { prisma } from '@/prisma';
 import { sendQuestionNotification } from '@/lib/email';
 
+type CommentWhereCondition = {
+  status?: string;
+  userId?: string;
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ courseId: string; lessonId: string }> }
@@ -72,7 +77,7 @@ export async function GET(
     }
 
     // Fetch comments with filtering based on user role
-    const whereConditions: any[] = [
+    const whereConditions: CommentWhereCondition[] = [
       { status: 'APPROVED' }, // Everyone sees approved
     ];
 
@@ -99,7 +104,7 @@ export async function GET(
     const comments = await prisma.comment.findMany({
       where: {
         lessonId: lessonId,
-        OR: whereConditions,
+        OR: whereConditions as never,
       },
       include: {
         user: {
