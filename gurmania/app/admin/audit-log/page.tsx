@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, Fragment } from "react";
+import { useEffect, useState, useRef, Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,7 @@ type AuditLog = {
   action: string;
   entityType: string | null;
   entityId: string | null;
-  metadata: any;
+  metadata: Record<string, unknown> | null;
   ipAddress: string | null;
   userAgent: string | null;
   createdAt: Date;
@@ -88,7 +88,7 @@ export default function AuditLogPage() {
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [metadataDialog, setMetadataDialog] = useState<{ open: boolean; data: any }>({
+  const [metadataDialog, setMetadataDialog] = useState<{ open: boolean; data: Record<string, unknown> | null }>({
     open: false,
     data: null,
   });
