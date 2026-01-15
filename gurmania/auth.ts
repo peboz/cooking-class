@@ -37,6 +37,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Check if user account is active
+        if (!user.isActive) {
+          throw new Error("AccountDeactivated");
+        }
+
         // Verify password
         const isValidPassword = await bcrypt.compare(
           credentials.password as string,
@@ -62,6 +67,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      // Check if user is active (for both OAuth and credentials)
+      if (user.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { isActive: true },
+        });
+
+        // Block inactive users from signing in
+        if (dbUser && !dbUser.isActive) {
+          return false;
+        }
+      }
+
       // For OAuth providers, allow sign-in and let PrismaAdapter handle user creation
       // Email verification will be handled in the jwt callback
       if (account && account.provider !== "credentials") {

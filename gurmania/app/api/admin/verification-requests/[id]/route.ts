@@ -59,6 +59,14 @@ export async function PATCH(
         data: { role: 'INSTRUCTOR' },
       });
     }
+    
+    // If rejected, revert role to STUDENT if it was set to INSTRUCTOR
+    if (action === 'REJECT' && instructorProfile.user.role === 'INSTRUCTOR') {
+      await prisma.user.update({
+        where: { id: instructorProfile.userId },
+        data: { role: 'STUDENT' },
+      });
+    }
 
     // Create audit log
     await prisma.auditLog.create({

@@ -190,17 +190,41 @@ export default function AdminUsersPage() {
     }
   };
 
-  const getRoleLabel = (role: string) => {
+  const getRoleLabel = (user: User) => {
+    const role = user.role;
     switch (role) {
       case "ADMIN":
         return "Administrator";
       case "INSTRUCTOR":
-        return "Instruktor";
+        // Only show as Instructor if verified
+        if (user.instructorProfile?.verified) {
+          return "Instruktor";
+        }
+        // Show as Polaznik with pending/rejected status
+        return "Polaznik";
       case "STUDENT":
         return "Polaznik";
       default:
         return role;
     }
+  };
+
+  const getRoleBadgeInfo = (user: User) => {
+    const role = user.role;
+    if (role === "INSTRUCTOR") {
+      // Check verification status
+      if (!user.instructorProfile?.verified) {
+        const status = user.instructorProfile?.verificationStatus;
+        if (status === "PENDING") {
+          return { color: "bg-yellow-500", label: "Polaznik (Zahtjev za instruktora na čekanju)" };
+        } else if (status === "REJECTED") {
+          return { color: "bg-gray-500", label: "Polaznik (Zahtjev za instruktora odbijen)" };
+        }
+        return { color: "bg-green-500", label: "Polaznik" };
+      }
+      return { color: "bg-blue-500", label: "Instruktor" };
+    }
+    return { color: getRoleBadgeColor(role), label: getRoleLabel(user) };
   };
 
   const formatDate = (date: Date | null) => {
@@ -342,9 +366,21 @@ export default function AdminUsersPage() {
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Badge className={getRoleBadgeColor(user.role)}>
-                      {getRoleLabel(user.role)}
-                    </Badge>
+                    {(() => {
+                      const badgeInfo = getRoleBadgeInfo(user);
+                      return (
+                        <div className="flex flex-col gap-1">
+                          <Badge className={badgeInfo.color}>
+                            {badgeInfo.label}
+                          </Badge>
+                          {user.role === "INSTRUCTOR" && !user.instructorProfile?.verified && (
+                            <span className="text-xs text-muted-foreground">
+                              Uloga: INSTRUCTOR (neverificiran)
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     {user.isActive ? (
