@@ -45,6 +45,10 @@ export default async function LessonPage({ params }: PageProps) {
   const data = await getLessonData(lessonId);
   const { lesson, progress, quizPassed } = data;
 
+  // Debug: Log quiz data
+  console.log('Lesson quiz data:', lesson.quiz);
+  console.log('Quiz passed:', quizPassed);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       {/* Breadcrumb Navigation */}
@@ -170,6 +174,16 @@ export default async function LessonPage({ params }: PageProps) {
               </CardContent>
             </Card>
           )}
+
+          {/* Debug Quiz Data */}
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle>Debug: Quiz Data</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-xs">{JSON.stringify({ quiz: lesson.quiz, quizPassed }, null, 2)}</pre>
+            </CardContent>
+          </Card>
 
           {/* Quiz Section */}
           {lesson.quiz && (

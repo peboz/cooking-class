@@ -53,9 +53,15 @@ interface Lesson {
     previousLesson: { id: string; title: string } | null;
     nextLesson: { id: string; title: string } | null;
   };
+  quiz: {
+    id: string;
+    title: string;
+    passingScore: number | null;
+  } | null;
   userProgress: {
     isCompleted: boolean;
   };
+  quizPassed: boolean;
 }
 
 export default function LessonViewerPage() {
@@ -272,6 +278,43 @@ export default function LessonViewerPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Quiz Section */}
+            {lesson.quiz && (
+              <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-orange-600" />
+                    {lesson.quiz.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-sm text-muted-foreground">
+                    {lesson.quizPassed ? (
+                      <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                        <CheckCircle className="h-5 w-5" />
+                        <span className="font-medium">Prošli ste kviz!</span>
+                      </div>
+                    ) : (
+                      <>
+                        <p>Testirajte svoje znanje nakon što pogledate lekciju.</p>
+                        {lesson.quiz.passingScore !== null && (
+                          <p className="mt-2">
+                            <span className="font-medium">Minimalni prolazni rezultat:</span>{' '}
+                            {lesson.quiz.passingScore}%
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <Button asChild className="w-full sm:w-auto">
+                    <Link href={`/app/quiz/${lesson.quiz.id}`}>
+                      {lesson.quizPassed ? 'Pokušaj ponovno' : 'Pokreni kviz'}
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Recipe steps */}
             {lesson.steps && (
               <Card>

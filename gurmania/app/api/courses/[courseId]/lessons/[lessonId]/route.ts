@@ -44,6 +44,13 @@ export async function GET(
             },
           },
         },
+        quiz: {
+          select: {
+            id: true,
+            title: true,
+            passingScore: true,
+          },
+        },
         ingredients: {
           include: {
             ingredient: true,
@@ -115,6 +122,28 @@ export async function GET(
 
     const isCompleted = progress?.completed || false;
 
+    // Check if quiz is passed
+    let quizPassed = false;
+    if (lesson.quiz) {
+      const submission = await prisma.quizSubmission.findFirst({
+        where: {
+          quizId: lesson.quiz.id,
+          userId: session.user.id,
+        },
+        orderBy: {
+          submittedAt: 'desc',
+        },
+      });
+
+      if (submission) {
+        if (lesson.quiz.passingScore === null) {
+          quizPassed = true;
+        } else {
+          quizPassed = (submission.score ?? 0) >= lesson.quiz.passingScore;
+        }
+      }
+    }
+
     return NextResponse.json({
       id: lesson.id,
       title: lesson.title,
@@ -149,9 +178,15 @@ export async function GET(
           title: nextLesson.title,
         } : null,
       },
+      quiz: lesson.quiz ? {
+        id: lesson.quiz.id,
+        title: lesson.quiz.title,
+        passingScore: lesson.quiz.passingScore,
+      } : null,
       userProgress: {
         isCompleted,
       },
+      quizPassed,
     });
   } catch (error) {
     console.error('Error fetching lesson:', error);
