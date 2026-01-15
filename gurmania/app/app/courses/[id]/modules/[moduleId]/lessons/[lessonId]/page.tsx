@@ -13,6 +13,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Clock, ChefHat, AlertTriangle, CheckCircle2, PlayCircle } from 'lucide-react';
+import { prisma } from '@/prisma';
 
 interface PageProps {
   params: Promise<{
@@ -22,27 +23,132 @@ interface PageProps {
   }>;
 }
 
-async function getLessonData(lessonId: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const res = await fetch(`${baseUrl}/api/lessons/${lessonId}`, {
-    cache: 'no-store',
+async function getLessonData(lessonId: string, userId: string) {
+  // Fetch lesson with all related data
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: {
+      module: {
+        include: {
+          course: {
+            select: {
+              id: true,
+              title: true,
+              instructorId: true,
+            },
+          },
+        },
+      },
+      quiz: {
+        select: {
+          id: true,
+          title: true,
+          passingScore: true,
+        },
+      },
+      ingredients: {
+        include: {
+          ingredient: true,
+        },
+      },
+      media: {
+        where: {
+          type: 'VIDEO',
+        },
+        take: 1,
+      },
+    },
   });
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch lesson');
+  if (!lesson) {
+    throw new Error('Lesson not found');
   }
 
-  return res.json();
+  // Check lesson progress
+  const progress = await prisma.progress.findUnique({
+    where: {
+      userId_courseId_lessonId: {
+        userId,
+        courseId: lesson.module.course.id,
+        lessonId: lesson.id,
+      },
+    },
+  });
+
+  // Check if quiz is passed
+  let quizPassed = false;
+  if (lesson.quiz) {
+    const submission = await prisma.quizSubmission.findFirst({
+      where: {
+        quizId: lesson.quiz.id,
+        userId,
+      },
+      orderBy: {
+        submittedAt: 'desc',
+      },
+    });
+
+    if (submission) {
+      if (lesson.quiz.passingScore === null) {
+        // No passing score set, any submission passes
+        quizPassed = true;
+      } else {
+        quizPassed = (submission.score ?? 0) >= lesson.quiz.passingScore;
+      }
+    }
+  }
+
+  return {
+    lesson: {
+      id: lesson.id,
+      title: lesson.title,
+      description: lesson.description,
+      videoUrl: lesson.videoUrl || lesson.media[0]?.url,
+      steps: lesson.steps,
+      durationMin: lesson.durationMin,
+      difficulty: lesson.difficulty,
+      prepTimeMin: lesson.prepTimeMin,
+      cookTimeMin: lesson.cookTimeMin,
+      cuisineType: lesson.cuisineType,
+      allergenTags: lesson.allergenTags,
+      ingredients: lesson.ingredients.map((li) => ({
+        id: li.ingredient.id,
+        name: li.ingredient.name,
+        quantity: li.quantity,
+        unit: li.unit,
+      })),
+      module: {
+        id: lesson.module.id,
+        title: lesson.module.title,
+        course: {
+          id: lesson.module.course.id,
+          title: lesson.module.course.title,
+        },
+      },
+      quiz: lesson.quiz
+        ? {
+            id: lesson.quiz.id,
+            title: lesson.quiz.title,
+            passingScore: lesson.quiz.passingScore,
+          }
+        : null,
+    },
+    progress: {
+      completed: progress?.completed ?? false,
+      percent: progress?.percent ?? 0,
+    },
+    quizPassed,
+  };
 }
 
 export default async function LessonPage({ params }: PageProps) {
   const session = await auth();
-  if (!session) {
+  if (!session?.user?.id) {
     redirect('/auth/login');
   }
 
   const { lessonId } = await params;
-  const data = await getLessonData(lessonId);
+  const data = await getLessonData(lessonId, session.user.id);
   const { lesson, progress, quizPassed } = data;
 
   // Debug: Log quiz data
@@ -214,7 +320,7 @@ export default async function LessonPage({ params }: PageProps) {
                   )}
                 </div>
                 <Button asChild className="w-full sm:w-auto">
-                  <Link href={`/app/quiz/${lesson.quiz.id}`}>
+                  <Link href={`/app/quiz/${lesson.quiz.id}?returnUrl=/app/courses/${lesson.module.course.id}/lessons/${lesson.id}`}>
                     {quizPassed ? 'Pokušaj ponovno' : 'Pokreni kviz'}
                   </Link>
                 </Button>

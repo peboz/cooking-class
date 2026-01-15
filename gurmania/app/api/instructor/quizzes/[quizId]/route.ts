@@ -85,6 +85,17 @@ export async function PATCH(
     const body = await request.json();
     const { title, passingScore, randomized, questions } = body;
 
+    // Validate passingScore
+    if (passingScore !== null && passingScore !== undefined) {
+      const score = Number(passingScore);
+      if (isNaN(score) || score < 0 || score > 100) {
+        return NextResponse.json(
+          { error: 'Traženi rezultat mora biti broj između 0 i 100' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Verify quiz exists and user is the instructor
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },

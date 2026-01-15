@@ -24,6 +24,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate passingScore
+    if (passingScore !== null && passingScore !== undefined) {
+      const score = Number(passingScore);
+      if (isNaN(score) || score < 0 || score > 100) {
+        return NextResponse.json(
+          { error: 'Traženi rezultat mora biti broj između 0 i 100' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Verify lesson exists and user is the instructor
     const lesson = await prisma.lesson.findUnique({
       where: { id: lessonId },

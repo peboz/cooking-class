@@ -317,7 +317,7 @@ export default function InstructorQuizPage({
         throw new Error(data.error || 'Failed to delete quiz');
       }
 
-      router.push(`/app/courses/${id}/modules/${moduleId}/lessons/${lessonId}`);
+      router.push(`/app/instructor/courses/${id}/modules/${moduleId}/lessons/${lessonId}`);
     } catch (err: any) {
       console.error('Error deleting quiz:', err);
       setError(err.message || 'Greška pri brisanju kviza');

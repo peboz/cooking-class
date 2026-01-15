@@ -32,6 +32,12 @@ export async function POST(request: NextRequest) {
             courseId: true,
           },
         },
+        quiz: {
+          select: {
+            id: true,
+            passingScore: true,
+          },
+        },
       },
     });
 
@@ -47,6 +53,37 @@ export async function POST(request: NextRequest) {
         { error: 'Lekcija ne pripada ovom tečaju' },
         { status: 400 }
       );
+    }
+
+    // If marking as completed and lesson has a quiz, check if quiz is passed
+    if (completed && lesson.quiz) {
+      const submission = await prisma.quizSubmission.findFirst({
+        where: {
+          quizId: lesson.quiz.id,
+          userId: session.user.id,
+        },
+        orderBy: {
+          submittedAt: 'desc',
+        },
+      });
+
+      // Check if quiz is passed
+      let quizPassed = false;
+      if (submission) {
+        if (lesson.quiz.passingScore === null) {
+          // No passing score set, any submission passes
+          quizPassed = true;
+        } else {
+          quizPassed = (submission.score ?? 0) >= lesson.quiz.passingScore;
+        }
+      }
+
+      if (!quizPassed) {
+        return NextResponse.json(
+          { error: 'Morate proći kviz prije nego što možete označiti lekciju kao dovršenu' },
+          { status: 400 }
+        );
+      }
     }
 
     // Find or create progress record for this specific lesson

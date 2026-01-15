@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -57,7 +57,15 @@ interface SubmissionResult {
   passingScore: number | null;
 }
 
-export default function QuizPage({ params }: { params: { quizId: string } }) {
+export default function QuizPage({ 
+  params,
+  searchParams 
+}: { 
+  params: Promise<{ quizId: string }>;
+  searchParams: Promise<{ returnUrl?: string }>;
+}) {
+  const { quizId } = use(params);
+  const { returnUrl } = use(searchParams);
   const router = useRouter();
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -71,7 +79,7 @@ export default function QuizPage({ params }: { params: { quizId: string } }) {
   useEffect(() => {
     async function loadQuiz() {
       try {
-        const res = await fetch(`/api/quizzes/${params.quizId}`);
+        const res = await fetch(`/api/quizzes/${quizId}`);
         if (!res.ok) {
           throw new Error('Failed to load quiz');
         }
@@ -79,8 +87,8 @@ export default function QuizPage({ params }: { params: { quizId: string } }) {
         setQuizData(data);
 
         // Clear localStorage for this quiz (clean session)
-        localStorage.removeItem(`quiz_${params.quizId}_answers`);
-        localStorage.removeItem(`quiz_${params.quizId}_currentQuestion`);
+        localStorage.removeItem(`quiz_${quizId}_answers`);
+        localStorage.removeItem(`quiz_${quizId}_currentQuestion`);
 
         setIsLoading(false);
       } catch (err) {
@@ -91,15 +99,15 @@ export default function QuizPage({ params }: { params: { quizId: string } }) {
     }
 
     loadQuiz();
-  }, [params.quizId]);
+  }, [quizId]);
 
   // Auto-save answers to localStorage
   useEffect(() => {
     if (!isLoading && !result) {
-      localStorage.setItem(`quiz_${params.quizId}_answers`, JSON.stringify(answers));
-      localStorage.setItem(`quiz_${params.quizId}_currentQuestion`, currentQuestionIndex.toString());
+      localStorage.setItem(`quiz_${quizId}_answers`, JSON.stringify(answers));
+      localStorage.setItem(`quiz_${quizId}_currentQuestion`, currentQuestionIndex.toString());
     }
-  }, [answers, currentQuestionIndex, params.quizId, isLoading, result]);
+  }, [answers, currentQuestionIndex, quizId, isLoading, result]);
 
   const handleAnswerChange = (questionId: string, optionId: string, checked: boolean) => {
     setAnswers((prev) => {
@@ -136,7 +144,7 @@ export default function QuizPage({ params }: { params: { quizId: string } }) {
     setError(null);
 
     try {
-      const res = await fetch(`/api/quizzes/${params.quizId}/submit`, {
+      const res = await fetch(`/api/quizzes/${quizId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ answers }),
@@ -150,8 +158,8 @@ export default function QuizPage({ params }: { params: { quizId: string } }) {
       setResult(submissionResult);
 
       // Clear localStorage after successful submission
-      localStorage.removeItem(`quiz_${params.quizId}_answers`);
-      localStorage.removeItem(`quiz_${params.quizId}_currentQuestion`);
+      localStorage.removeItem(`quiz_${quizId}_answers`);
+      localStorage.removeItem(`quiz_${quizId}_currentQuestion`);
     } catch (err) {
       console.error('Error submitting quiz:', err);
       setError('Greška pri predaji kviza. Molimo pokušajte ponovno.');
@@ -161,7 +169,15 @@ export default function QuizPage({ params }: { params: { quizId: string } }) {
   };
 
   const handleRetry = () => {
-    router.refresh();
+    // Reset all state
+    setResult(null);
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    setError(null);
+    
+    // Clear localStorage
+    localStorage.removeItem(`quiz_${quizId}_answers`);
+    localStorage.removeItem(`quiz_${quizId}_currentQuestion`);
   };
 
   if (isLoading) {
@@ -262,7 +278,7 @@ export default function QuizPage({ params }: { params: { quizId: string } }) {
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button asChild variant="outline">
-                <Link href={`/app/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}>
+                <Link href={returnUrl || `/app/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}>
                   Povratak na lekciju
                 </Link>
               </Button>

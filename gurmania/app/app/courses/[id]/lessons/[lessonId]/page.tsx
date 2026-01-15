@@ -134,7 +134,8 @@ export default function LessonViewerPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update progress');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update progress');
       }
 
       // Update local state
@@ -149,7 +150,8 @@ export default function LessonViewerPage() {
       }
     } catch (err) {
       console.error('Error updating progress:', err);
-      alert('Greška pri ažuriranju napretka');
+      const errorMessage = err instanceof Error ? err.message : 'Greška pri ažuriranju napretka';
+      alert(errorMessage);
     } finally {
       setIsCompleting(false);
     }
@@ -307,7 +309,7 @@ export default function LessonViewerPage() {
                     )}
                   </div>
                   <Button asChild className="w-full sm:w-auto">
-                    <Link href={`/app/quiz/${lesson.quiz.id}`}>
+                    <Link href={`/app/quiz/${lesson.quiz.id}?returnUrl=/app/courses/${courseId}/lessons/${lesson.id}`}>
                       {lesson.quizPassed ? 'Pokušaj ponovno' : 'Pokreni kviz'}
                     </Link>
                   </Button>
