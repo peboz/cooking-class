@@ -200,3 +200,366 @@ export async function sendSetPasswordEmail(email: string, token: string) {
   });
 }
 
+export async function sendInstructorApprovedEmail(email: string, userName: string) {
+  const instructorPanelUrl = `${baseUrl}/app/instructor`;
+  
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: 'Vaša prijava za instruktora je odobrena',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .container {
+              background-color: #fff5f0;
+              border-radius: 8px;
+              padding: 30px;
+              margin: 20px 0;
+              border: 2px solid #ea580c;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .header h1 {
+              color: #ea580c;
+              margin: 0;
+              font-size: 28px;
+            }
+            .button {
+              display: inline-block;
+              padding: 14px 28px;
+              background-color: #ea580c;
+              color: #fff !important;
+              text-decoration: none;
+              border-radius: 6px;
+              margin: 20px 0;
+              font-weight: 600;
+            }
+            .info-box {
+              background-color: #fff;
+              border-left: 4px solid #ea580c;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            }
+            .footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              font-size: 12px;
+              color: #666;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Čestitamo!</h1>
+            </div>
+            <h2>Dobrodošli u tim Gurmania instruktora!</h2>
+            <p>Dragi/a ${userName},</p>
+            <p>Radujemo se obavijestiti vas da je vaša prijava za instruktora <strong>odobrena</strong>!</p>
+            <p>Sada možete kreirati i voditi tečajeve, organizirati live radionice i dijeliti svoje kulinarske vještine s polaznicima diljem svijeta.</p>
+            
+            <div class="info-box">
+              <h3 style="margin-top: 0;">Kako započeti:</h3>
+              <ol style="margin: 10px 0; padding-left: 20px;">
+                <li>Pristupite <strong>Instruktorskom panelu</strong> klikom na gumb ispod</li>
+                <li>Kreirajte svoj prvi tečaj ili radionicu</li>
+                <li>Dodajte lekcije, materijale i recepte</li>
+                <li>Objavite i započnite podučavanje!</li>
+              </ol>
+            </div>
+
+            <div style="text-align: center;">
+              <a href="${instructorPanelUrl}" class="button">Otvori Instruktorski panel</a>
+            </div>
+
+            <p>Također možete pristupiti instruktorskom panelu klikom na svoj profil u gornjem desnom kutu i odabirom "Instruktorski panel".</p>
+
+            <div class="footer">
+              <p>Ako imate bilo kakva pitanja, slobodno nas kontaktirajte.</p>
+              <p>Sretno podučavanje!</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}
+
+export async function sendInstructorRejectedEmail(email: string, userName: string, reason: string) {
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: 'Vaša prijava za instruktora je ažurirana',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .container {
+              background-color: #f9f9f9;
+              border-radius: 8px;
+              padding: 30px;
+              margin: 20px 0;
+            }
+            .reason-box {
+              background-color: #fff;
+              border-left: 4px solid #dc2626;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            }
+            .button {
+              display: inline-block;
+              padding: 12px 24px;
+              background-color: #ea580c;
+              color: #fff !important;
+              text-decoration: none;
+              border-radius: 6px;
+              margin: 20px 0;
+            }
+            .footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              font-size: 12px;
+              color: #666;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <p>Poštovani/a ${userName},</p>
+            <p>Hvala Vam što ste pokazali interes za stjecanje pozicije instruktora na Gurmaniji.</p>
+            <p>Nakon pregleda vaše prijave, nažalost ne možemo odobriti vaš zahtjev u ovom trenutku.</p>
+            
+            <div class="reason-box">
+              <h3 style="margin-top: 0;">Razlog:</h3>
+              <p style="margin: 0;">${reason}</p>
+            </div>
+
+            <p>Ne brinite! Možete se ponovno prijaviti nakon što riješite navedene probleme. Trudimo se održati visoku kvalitetu naših instruktora kako bismo pružili najbolje iskustvo našim korisnicima.</p>
+
+            <p>Ako imate dodatnih pitanja ili trebate pojašnjenje, slobodno nas kontaktirajte.</p>
+
+            <div style="text-align: center;">
+              <a href="${baseUrl}/app" class="button">Povratak na platformu</a>
+            </div>
+
+            <div class="footer">
+              <p>Hvala na razumijevanju.</p>
+              <p>Tim Gurmania</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}
+
+export async function sendQuestionNotification(
+  instructorEmail: string,
+  instructorName: string,
+  lessonTitle: string,
+  courseTitle: string,
+  questionContent: string,
+  courseId: string,
+  lessonId: string
+) {
+  const lessonUrl = `${baseUrl}/app/courses/${courseId}/lessons/${lessonId}`;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: instructorEmail,
+    subject: `Novo pitanje na lekciji: ${lessonTitle} - Gurmania`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .container {
+              background-color: #f9f9f9;
+              border-radius: 8px;
+              padding: 30px;
+              margin: 20px 0;
+            }
+            .button {
+              display: inline-block;
+              padding: 12px 24px;
+              background-color: #000;
+              color: #fff !important;
+              text-decoration: none;
+              border-radius: 6px;
+              margin: 20px 0;
+            }
+            .question-box {
+              background-color: #fff;
+              border-left: 4px solid #f97316;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            }
+            .footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              font-size: 12px;
+              color: #666;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Novo pitanje na vašoj lekciji</h2>
+            <p>Poštovani/a ${instructorName},</p>
+            <p>Polaznik je postavio pitanje na vašoj lekciji <strong>${lessonTitle}</strong> u tečaju <strong>${courseTitle}</strong>.</p>
+            
+            <div class="question-box">
+              <h3 style="margin-top: 0;">Pitanje:</h3>
+              <p style="margin: 0;">${questionContent.length > 300 ? questionContent.substring(0, 300) + '...' : questionContent}</p>
+            </div>
+
+            <p>Odgovorite na pitanje kako biste pomogli polazniku i poboljšali njihovo iskustvo učenja.</p>
+
+            <div style="text-align: center;">
+              <a href="${lessonUrl}" class="button">Pogledaj i odgovori</a>
+            </div>
+
+            <div class="footer">
+              <p>Možete se odjaviti od obavijesti o pitanjima u postavkama svog računa.</p>
+              <p>Tim Gurmania</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}
+
+export async function sendReplyNotification(
+  recipientEmail: string,
+  recipientName: string,
+  replierName: string,
+  replyContent: string,
+  originalComment: string,
+  lessonTitle: string,
+  courseTitle: string,
+  courseId: string,
+  lessonId: string
+) {
+  const lessonUrl = `${baseUrl}/app/courses/${courseId}/lessons/${lessonId}`;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: recipientEmail,
+    subject: `${replierName} je odgovorio/la na vaš komentar - Gurmania`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .container {
+              background-color: #f9f9f9;
+              border-radius: 8px;
+              padding: 30px;
+              margin: 20px 0;
+            }
+            .button {
+              display: inline-block;
+              padding: 12px 24px;
+              background-color: #000;
+              color: #fff !important;
+              text-decoration: none;
+              border-radius: 6px;
+              margin: 20px 0;
+            }
+            .comment-box {
+              background-color: #fff;
+              border: 1px solid #ddd;
+              padding: 15px;
+              margin: 10px 0;
+              border-radius: 4px;
+            }
+            .reply-box {
+              background-color: #fff;
+              border-left: 4px solid #10b981;
+              padding: 15px;
+              margin: 10px 0;
+              border-radius: 4px;
+            }
+            .footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              font-size: 12px;
+              color: #666;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Novi odgovor na vaš komentar</h2>
+            <p>Poštovani/a ${recipientName},</p>
+            <p><strong>${replierName}</strong> je odgovorio/la na vaš komentar u lekciji <strong>${lessonTitle}</strong> (${courseTitle}).</p>
+            
+            <div class="comment-box">
+              <p style="font-size: 12px; color: #666; margin-top: 0;">Vaš komentar:</p>
+              <p style="margin: 0;">${originalComment.length > 200 ? originalComment.substring(0, 200) + '...' : originalComment}</p>
+            </div>
+
+            <div class="reply-box">
+              <p style="font-size: 12px; color: #666; margin-top: 0;">Odgovor:</p>
+              <p style="margin: 0;">${replyContent.length > 300 ? replyContent.substring(0, 300) + '...' : replyContent}</p>
+            </div>
+
+            <div style="text-align: center;">
+              <a href="${lessonUrl}" class="button">Pogledaj odgovor</a>
+            </div>
+
+            <div class="footer">
+              <p>Možete se odjaviti od obavijesti u postavkama svog računa.</p>
+              <p>Tim Gurmania</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}

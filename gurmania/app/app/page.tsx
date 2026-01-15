@@ -3,120 +3,57 @@ import { redirect } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BookOpen, Sparkles, Video } from "lucide-react"
-import { CourseCard } from "@/components/course-card"
+import { CourseSection } from "@/components/course-section"
+import { prisma } from "@/prisma"
 
-const coursesSet1 = [
-  {
-    title: "Talijanska pasta",
-    instructor: "Chef Marija Kovačević",
-    level: "Srednji",
-    duration: "6 sati",
-    rating: "4.9",
-    image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80"
-  },
-  {
-    title: "Čokoladna torta",
-    instructor: "Chef Ivan Horvat",
-    level: "Napredni",
-    duration: "8 sati",
-    rating: "5.0",
-    image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80"
-  },
-  {
-    title: "Japanska kuhinja",
-    instructor: "Chef Ana Novak",
-    level: "Početnik",
-    duration: "5 sati",
-    rating: "4.8",
-    image: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80"
-  },
-  {
-    title: "Veganski recepti",
-    instructor: "Chef Petra Jurić",
-    level: "Početnik",
-    duration: "4 sati",
-    rating: "4.9",
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80"
-  },
-  {
-    title: "Mediteranske delicije",
-    instructor: "Chef Luka Marić",
-    level: "Srednji",
-    duration: "7 sati",
-    rating: "4.7",
-    image: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&q=80"
-  }
-];
-
-const coursesSet2 = [
-  {
-    title: "Azijska kuhinja",
-    instructor: "Chef Nina Tomić",
-    level: "Početnik",
-    duration: "5 sati",
-    rating: "4.8",
-    image: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=800&q=80"
-  },
-  {
-    title: "Grill majstor",
-    instructor: "Chef Mateo Horvat",
-    level: "Napredni",
-    duration: "6 sati",
-    rating: "4.9",
-    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80"
-  },
-  {
-    title: "Deserti i kolači",
-    instructor: "Chef Sara Perić",
-    level: "Srednji",
-    duration: "7 sati",
-    rating: "5.0",
-    image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800&q=80"
-  },
-  {
-    title: "Brza i zdrava jela",
-    instructor: "Chef Tomislav Babić",
-    level: "Početnik",
-    duration: "4 sati",
-    rating: "4.7",
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80"
-  },
-  {
-    title: "Meksička kuhinja",
-    instructor: "Chef Ivana Lovrić",
-    level: "Srednji",
-    duration: "6 sati",
-    rating: "4.8",
-    image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&q=80"
-  }
-];
-
-const liveWorkshops = [
-  {
-    title: "Live: Sushi masterclass",
-    instructor: "Chef Ana Novak",
-    level: "Napredni",
-    duration: "3 sata",
-    rating: "5.0",
-    image: "https://images.unsplash.com/photo-1553621042-f6e147245754?w=800&q=80"
-  },
-  {
-    title: "Live: Grill tehnike",
-    instructor: "Chef Mateo Horvat",
-    level: "Napredni",
-    duration: "2.5 sata",
-    rating: "4.9",
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80"
-  },
-  {
-    title: "Live: Veganski recepti",
-    instructor: "Chef Petra Josipović",
-    level: "Početnik",
-    duration: "75 min",
-    rating: "4.7",
-    image: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800&q=80"
-  }
-];
+// Helper function to format course data
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function formatCourse(course: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lessonCount = course.modules?.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (acc: number, module: any) => acc + (module.lessons?.length || 0),
+    0
+  ) || 0;
+  
+  const avgRating = course.reviews?.length > 0
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? course.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / course.reviews.length
+    : 0;
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const totalDuration = course.modules?.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (acc: number, module: any) => 
+      acc + (module.lessons?.reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (lAcc: number, lesson: any) => lAcc + (lesson.durationMin || 0),
+        0
+      ) || 0),
+    0
+  ) || 0;
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const thumbnail = course.media?.find((m: any) => m.type === 'IMAGE')?.url || '/placeholder-course.jpg';
+  
+  // Format difficulty to Croatian
+  const difficultyMap: Record<string, string> = {
+    'EASY': 'Lako',
+    'MEDIUM': 'Srednje',
+    'HARD': 'Teško',
+  };
+  
+  return {
+    id: course.id,
+    title: course.title,
+    instructor: course.instructor?.name || 'Nepoznati instruktor',
+    level: difficultyMap[course.difficulty] || course.difficulty,
+    duration: totalDuration > 0 ? `${Math.round(totalDuration / 60)} sati` : undefined,
+    rating: avgRating,
+    lessonCount,
+    image: thumbnail,
+  };
+}
 
 export default async function AppPage() {
   const session = await auth();
@@ -125,50 +62,129 @@ export default async function AppPage() {
     redirect("/auth/login");
   }
 
+  // Check if user has completed onboarding (has a student profile)
+  // Skip check for instructors who might not have student profile
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: {
+      studentProfile: true,
+      instructorProfile: true,
+    },
+  });
+
+  // If user is not an instructor and doesn't have a student profile, redirect to onboarding
+  if (user && !user.studentProfile && user.role === 'STUDENT') {
+    redirect("/onboarding");
+  }
+
+  // Check if user is a verified instructor or admin
+  const isInstructor = user?.instructorProfile?.verified || user?.role === 'ADMIN';
+
+  // Fetch real courses from database
+  const courseInclude = {
+    instructor: {
+      select: {
+        id: true,
+        name: true,
+        image: true,
+      },
+    },
+    modules: {
+      include: {
+        lessons: true,
+      },
+    },
+    media: true,
+    reviews: {
+      select: {
+        rating: true,
+      },
+    },
+  };
+
+  // Fetch recommended courses based on user preferences
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recommendedWhere: any = {
+    published: true,
+  };
+  
+  // If user has favorite cuisines, filter by those
+  if (user?.studentProfile?.favoriteCuisines && user.studentProfile.favoriteCuisines.length > 0) {
+    recommendedWhere.cuisineType = {
+      in: user.studentProfile.favoriteCuisines,
+    };
+  }
+
+  const recommendedCourses = await prisma.course.findMany({
+    where: recommendedWhere,
+    include: courseInclude,
+    take: 5,
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  // Fetch courses the user has started (has progress)
+  const enrolledCourses = await prisma.course.findMany({
+    where: {
+      published: true,
+      progress: {
+        some: {
+          userId: session.user.id,
+          completed: false,
+        },
+      },
+    },
+    include: courseInclude,
+    take: 5,
+  });
+
+  // Fetch popular courses (fallback if no enrolled courses)
+  const popularCourses = await prisma.course.findMany({
+    where: {
+      published: true,
+    },
+    include: courseInclude,
+    take: 5,
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  // Format courses for display
+  const formattedRecommended = recommendedCourses.map(formatCourse);
+  const formattedEnrolled = enrolledCourses.map(formatCourse);
+  const formattedPopular = popularCourses.map(formatCourse);
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900 overflow-hidden">
       {/* Navigation */}
-      <Navbar user={session.user} />
+      <Navbar user={session.user} isInstructor={isInstructor} />
     
       <main className="flex-1 p-6 overflow-auto">
         {/* Section: Moglo bi Vam se svidjeti... */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Sparkles className="!w-[1.625rem] !h-[1.625rem]" />
-            Moglo bi Vam se svidjeti...
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {coursesSet1.map((course) => (
-              <CourseCard key={course.title + '-' + course.instructor} course={course} />
-            ))}
-          </div>
-        </section>
+        <CourseSection 
+          title="Moglo bi Vam se svidjeti..." 
+          icon={Sparkles} 
+          courses={formattedRecommended.length > 0 ? formattedRecommended : formattedPopular} 
+          emptyMessage="Nema dostupnih tečajeva koji odgovaraju Vašim preferencijama"
+        />
 
         {/* Section: Vaši tečajevi */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <BookOpen className="!w-[1.625rem] !h-[1.625rem]" />
-            Vaši tečajevi
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {coursesSet2.map((course) => (
-              <CourseCard key={course.title + '-' + course.instructor} course={course} />
-            ))}
-          </div>
-        </section>
+        <CourseSection 
+          title="Nastavite učiti" 
+          icon={BookOpen} 
+          courses={formattedEnrolled} 
+          emptyMessage="Niste još upisani ni na jedan tečaj"
+        />
 
-        {/* Section: Live Radionice */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Video className="!w-6 !h-6" />
-            Live Radionice
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {liveWorkshops.map((course) => (
-              <CourseCard key={course.title + '-' + course.instructor} course={course} />
-            ))}
-          </div>
-        </section>
+        {/* Section: Popularni tečajevi */}
+        <CourseSection 
+          title="Popularni tečajevi" 
+          icon={Video} 
+          courses={formattedPopular} 
+          emptyMessage="Nema dostupnih tečajeva"
+        />
       </main>
 
       {/* Footer */}

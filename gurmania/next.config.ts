@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'amzn-s3-gurmania-prod.s3.eu-central-1.amazonaws.com',
+      }
     ],
   },
 };

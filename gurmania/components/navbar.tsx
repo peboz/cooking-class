@@ -19,9 +19,19 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Card, CardContent } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ProfileSettingsDialog } from "@/components/profile-settings-dialog"
-import { Search, Settings, LogOut, ChefHat } from "lucide-react"
+import { Search, Settings, LogOut, ChefHat, ShoppingCart, Trash2 } from "lucide-react"
 import { signOut } from "next-auth/react"
+import Link from "next/link"
 
 interface NavbarProps {
   user?: {
@@ -29,11 +39,26 @@ interface NavbarProps {
     email?: string | null
     image?: string | null
   }
+  isInstructor?: boolean
 }
 
-export function Navbar({ user }: NavbarProps) {
+interface ShoppingListItem {
+  id: string;
+  ingredientId: string;
+  quantity: number | null;
+  unit: string | null;
+  purchased: boolean;
+  ingredient: {
+    name: string;
+  };
+}
+
+export function Navbar({ user, isInstructor }: NavbarProps) {
   const [open, setOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [shoppingListOpen, setShoppingListOpen] = useState(false)
+  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([])
+  const [loadingList, setLoadingList] = useState(false)
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -66,33 +91,112 @@ export function Navbar({ user }: NavbarProps) {
     return "U"
   }
 
+  const fetchShoppingList = async () => {
+    setLoadingList(true)
+    try {
+      const response = await fetch('/api/shopping-lists')
+      if (response.ok) {
+        const data = await response.json()
+        // Get the most recent shopping list or create empty array
+        if (data.lists && data.lists.length > 0) {
+          setShoppingList(data.lists[0].items || [])
+        } else {
+          setShoppingList([])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching shopping list:', error)
+    } finally {
+      setLoadingList(false)
+    }
+  }
+
+  const toggleItemPurchased = async (itemId: string, purchased: boolean) => {
+    try {
+      const response = await fetch(`/api/shopping-lists/items/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ purchased }),
+      })
+      
+      if (response.ok) {
+        setShoppingList(prev => 
+          prev.map(item => 
+            item.id === itemId ? { ...item, purchased } : item
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Error updating item:', error)
+    }
+  }
+
+  const deleteItem = async (itemId: string) => {
+    try {
+      const response = await fetch(`/api/shopping-lists/items/${itemId}`, {
+        method: 'DELETE',
+      })
+      
+      if (response.ok) {
+        setShoppingList(prev => prev.filter(item => item.id !== itemId))
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (shoppingListOpen) {
+      fetchShoppingList()
+    }
+  }, [shoppingListOpen])
+
   return (
     <>
       <nav className="border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex h-16 items-center px-4 container mx-auto">
           {/* Left - Logo/Brand */}
-          <div className="flex items-center gap-2">
+          <Link href="/app" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <ChefHat className="w-8 h-8 text-orange-600" />
             <span className="text-2xl font-bold">Gurmania</span>
-          </div>
+          </Link>
 
-          {/* Middle - Search */}
-          <div className="flex-1 flex justify-center px-8">
+          {/* Middle - Navigation Links & Search */}
+          <div className="flex-1 flex items-center justify-center gap-6 px-8">
+            <Link 
+              href="/app/courses" 
+              className="hidden md:inline-block text-sm font-medium hover:text-orange-600 transition-colors"
+            >
+              Pregledaj tečajeve
+            </Link>
             <Button
               variant="outline"
-              className="relative w-full max-w-sm justify-start text-sm text-muted-foreground"
+              className="relative w-full max-w-xs justify-start text-sm text-muted-foreground"
               onClick={() => setOpen(true)}
             >
               <Search className="mr-2 h-4 w-4" />
-              <span>Pretražite...</span>
+              <span className="hidden sm:inline">Pretražite...</span>
               <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
                 <span className="text-xs">⌘</span>K
               </kbd>
             </Button>
           </div>
 
-          {/* Right - User Profile */}
+          {/* Right - Shopping List & User Profile */}
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShoppingListOpen(true)}
+              className="relative"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {shoppingList.length > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-orange-600 text-white text-xs flex items-center justify-center">
+                  {shoppingList.filter(item => !item.purchased).length}
+                </span>
+              )}
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 gap-2">
@@ -113,10 +217,24 @@ export function Navbar({ user }: NavbarProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/app">
+                    <ChefHat className="mr-2 h-4 w-4" />
+                    <span>Moji tečajevi</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Postavke profila</span>
                 </DropdownMenuItem>
+                {isInstructor && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/app/instructor">
+                      <ChefHat className="mr-2 h-4 w-4" />
+                      <span>Instruktorski panel</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -175,6 +293,82 @@ export function Navbar({ user }: NavbarProps) {
         onOpenChange={setSettingsOpen}
         user={user}
       />
+
+      {/* Shopping List Dialog */}
+      <Dialog open={shoppingListOpen} onOpenChange={setShoppingListOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Lista za kupovinu
+            </DialogTitle>
+            <DialogDescription>
+              Ovdje možete vidjeti i urediti svoju listu za kupovinu
+            </DialogDescription>
+          </DialogHeader>
+          
+          {loadingList ? (
+            <div className="flex justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          ) : shoppingList.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>Vaša lista za kupovinu je prazna</p>
+              <p className="text-sm mt-1">Dodajte sastojke iz lekcija da biste započeli</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {shoppingList.map((item) => (
+                <Card key={item.id} className={item.purchased ? 'opacity-60' : ''}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={item.purchased}
+                        onCheckedChange={(checked) => 
+                          toggleItemPurchased(item.id, checked as boolean)
+                        }
+                      />
+                      <div className="flex-1">
+                        <span className={item.purchased ? 'line-through' : ''}>
+                          {item.quantity && item.unit && (
+                            <span className="font-medium">
+                              {item.quantity} {item.unit}{' '}
+                            </span>
+                          )}
+                          {item.ingredient.name}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteItem(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {shoppingList.length > 0 && (
+            <div className="pt-4 border-t">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Ukupno stavki:</span>
+                <span className="font-medium">{shoppingList.length}</span>
+              </div>
+              <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                <span>Kupljeno:</span>
+                <span className="font-medium">
+                  {shoppingList.filter(item => item.purchased).length}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
