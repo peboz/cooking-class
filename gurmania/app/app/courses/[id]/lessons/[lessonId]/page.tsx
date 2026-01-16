@@ -19,7 +19,8 @@ import {
   Clock, 
   ShoppingCart,
   AlertCircle,
-  Home
+  Home,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -53,23 +54,30 @@ interface Lesson {
     previousLesson: { id: string; title: string } | null;
     nextLesson: { id: string; title: string } | null;
   };
+  quiz: {
+    id: string;
+    title: string;
+    passingScore: number | null;
+  } | null;
   userProgress: {
     isCompleted: boolean;
   };
+  quizPassed: boolean;
 }
 
 export default function LessonViewerPage() {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
-  const courseId = params.courseId as string;
+  const courseId = params.id as string;
   const lessonId = params.lessonId as string;
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCompleting, setIsCompleting] = useState(false);
   const [isInstructor, setIsInstructor] = useState(false);
+  const [showLockedDialog, setShowLockedDialog] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
     fetchLesson();
@@ -98,6 +106,14 @@ export default function LessonViewerPage() {
       
       if (!response.ok) {
         const data = await response.json();
+        
+        // Check if this is a locked lesson error
+        if (response.status === 403 && data.locked) {
+          setShowLockedDialog(true);
+          setError(data.error || 'Lekcija je zaključana');
+          return;
+        }
+        
         throw new Error(data.error || 'Failed to fetch lesson');
       }
 
@@ -108,44 +124,6 @@ export default function LessonViewerPage() {
       setError(err instanceof Error ? err.message : 'Greška pri učitavanju lekcije');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleMarkComplete = async () => {
-    if (!lesson || isCompleting) return;
-    
-    try {
-      setIsCompleting(true);
-      
-      const response = await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId,
-          lessonId,
-          completed: true,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update progress');
-      }
-
-      // Update local state
-      setLesson({
-        ...lesson,
-        userProgress: { isCompleted: true },
-      });
-
-      // Navigate to next lesson if available
-      if (lesson.navigation.nextLesson) {
-        router.push(`/app/courses/${courseId}/lessons/${lesson.navigation.nextLesson.id}`);
-      }
-    } catch (err) {
-      console.error('Error updating progress:', err);
-      alert('Greška pri ažuriranju napretka');
-    } finally {
-      setIsCompleting(false);
     }
   };
 
@@ -170,6 +148,46 @@ export default function LessonViewerPage() {
     } catch (err) {
       console.error('Error creating shopping list:', err);
       alert('Greška pri stvaranju liste za kupovinu');
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    if (!lesson || isCompleting) return;
+    
+    try {
+      setIsCompleting(true);
+      
+      const response = await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId,
+          lessonId,
+          completed: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update progress');
+      }
+
+      // Update local state
+      setLesson({
+        ...lesson,
+        userProgress: { isCompleted: true },
+      });
+
+      // Navigate to next lesson if available
+      if (lesson.navigation.nextLesson) {
+        router.push(`/app/courses/${courseId}/lessons/${lesson.navigation.nextLesson.id}`);
+      }
+    } catch (err) {
+      console.error('Error updating progress:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Greška pri ažuriranju napretka';
+      alert(errorMessage);
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -201,15 +219,34 @@ export default function LessonViewerPage() {
         <main className="flex-1 container mx-auto px-4 py-8">
           <Card className="max-w-2xl mx-auto">
             <CardContent className="p-12 text-center space-y-4">
-              <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
-              <h2 className="text-2xl font-bold">Greška</h2>
-              <p className="text-muted-foreground">{error || 'Lekcija nije pronađena'}</p>
-              <Button asChild>
-                <Link href={`/app/courses/${courseId}`}>
-                  <Home className="h-4 w-4 mr-2" />
-                  Povratak na tečaj
-                </Link>
-              </Button>
+              {showLockedDialog ? (
+                <>
+                  <Lock className="h-16 w-16 text-orange-500 mx-auto" />
+                  <h2 className="text-2xl font-bold">Lekcija je zaključana</h2>
+                  <p className="text-muted-foreground">{error}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Morate završiti sve kvizove iz prethodnih modula prije nego što možete pristupiti ovoj lekciji.
+                  </p>
+                  <Button asChild>
+                    <Link href={`/app/courses/${courseId}`}>
+                      <Home className="h-4 w-4 mr-2" />
+                      Povratak na tečaj
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+                  <h2 className="text-2xl font-bold">Greška</h2>
+                  <p className="text-muted-foreground">{error || 'Lekcija nije pronađena'}</p>
+                  <Button asChild>
+                    <Link href={`/app/courses/${courseId}`}>
+                      <Home className="h-4 w-4 mr-2" />
+                      Povratak na tečaj
+                    </Link>
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </main>
@@ -272,6 +309,13 @@ export default function LessonViewerPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Video player */}
+            {lesson.videoUrl && (
+              <div>
+                <YouTubeEmbed videoUrl={lesson.videoUrl} />
+              </div>
+            )}
+
             {/* Recipe steps */}
             {lesson.steps && (
               <Card>
@@ -287,11 +331,46 @@ export default function LessonViewerPage() {
               </Card>
             )}
 
-            {/* Video player */}
-            {lesson.videoUrl && (
-              <div>
-                <YouTubeEmbed videoUrl={lesson.videoUrl} />
-              </div>
+            {/* Quiz Section */}
+            {lesson.quiz && (
+              <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-orange-600" />
+                    {lesson.quiz.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-sm">
+                    {lesson.quizPassed ? (
+                      <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                        <CheckCircle className="h-5 w-5" />
+                        <span className="font-medium">Uspješno ste završili kviz i lekciju!</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">
+                          Morate riješiti kviz kako biste završili ovu lekciju.
+                        </p>
+                        {lesson.quiz.passingScore !== null ? (
+                          <p className="text-muted-foreground">
+                            Minimalni prolazni rezultat: <span className="font-semibold text-orange-600">{lesson.quiz.passingScore}%</span>
+                          </p>
+                        ) : (
+                          <p className="text-muted-foreground">
+                            Riješite kviz kako biste označili lekciju kao završenu.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Button asChild className="w-full sm:w-auto">
+                    <Link href={`/app/quiz/${lesson.quiz.id}?returnUrl=/app/courses/${courseId}/lessons/${lesson.id}`}>
+                      {lesson.quizPassed ? 'Pokušaj ponovno' : 'Pokreni kviz'}
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
             )}
 
             {/* Navigation buttons */}
@@ -311,7 +390,8 @@ export default function LessonViewerPage() {
                 <div className="flex-1" />
               )}
 
-              {!lesson.userProgress.isCompleted && (
+              {/* Show mark complete button only for lessons without quiz */}
+              {!lesson.quiz && !lesson.userProgress.isCompleted && (
                 <Button 
                   onClick={handleMarkComplete}
                   disabled={isCompleting}

@@ -92,9 +92,10 @@ export async function POST(
     const nextOrder = maxOrderLesson ? maxOrderLesson.order + 1 : 0;
 
     // Create lesson with ingredients in transaction
-    const lesson = await prisma.$transaction(async (tx) => {
-      // Create lesson
-      const newLesson = await tx.lesson.create({
+    const lesson = await prisma.$transaction(
+      async (tx) => {
+        // Create lesson
+        const newLesson = await tx.lesson.create({
         data: {
           moduleId,
           title: title.trim(),
@@ -137,7 +138,12 @@ export async function POST(
       }
 
       return newLesson;
-    });
+    },
+    {
+      maxWait: 10000, // 10 seconds
+      timeout: 20000, // 20 seconds
+    }
+  );
 
     return NextResponse.json(
       { message: 'Lekcija uspješno kreirana', lesson },
