@@ -57,11 +57,6 @@ const data = {
           icon: Users,
         },
         {
-          title: "Instruktori",
-          url: "/admin/instructors",
-          icon: ChefHat,
-        },
-        {
           title: "Zahtjevi za verifikaciju",
           url: "/admin/verification-requests",
           icon: ShieldAlert,

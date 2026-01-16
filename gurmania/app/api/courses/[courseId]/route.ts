@@ -104,8 +104,28 @@ export async function GET(
     };
 
     // Calculate stats
+    const moduleCount = courseData.modules.length;
+     
     const lessonCount = courseData.modules.reduce(
-      (acc: number, module) => acc + module.lessons.length,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (acc: number, module: any) => acc + module.lessons.length,
+      0
+    );
+    const avgRating = courseData.reviews.length > 0
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? courseData.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / courseData.reviews.length
+      : 0;
+    const totalReviews = courseData.reviews.length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const thumbnail = courseData.media.find((m: any) => m.type === 'IMAGE')?.url || '/placeholder-course.jpg';
+     
+    const totalDuration = courseData.modules.reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (acc: number, module: any) => acc + module.lessons.reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (lAcc: number, lesson: any) => lAcc + (lesson.durationMin || 0),
+        0
+      ),
       0
     );
 
