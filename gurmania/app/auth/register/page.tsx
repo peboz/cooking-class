@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -19,6 +20,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [oauthProviders, setOauthProviders] = useState<string[]>([])
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,11 +39,17 @@ export default function RegisterPage() {
       return
     }
 
+    if (!termsAccepted) {
+      setError("Morate prihvatiti uvjete korištenja")
+      setLoading(false)
+      return
+    }
+
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, termsAccepted }),
       })
 
       const data = await response.json()
@@ -193,6 +201,24 @@ export default function RegisterPage() {
                 required
                 disabled={loading}
               />
+            </div>
+
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="terms"
+                checked={termsAccepted}
+                onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
+                disabled={loading}
+              />
+              <label
+                htmlFor="terms"
+                className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Prihvaćam{" "}
+                <Link href="/terms-of-service" target="_blank" className="font-medium text-primary hover:underline">
+                  uvjete korištenja
+                </Link>
+              </label>
             </div>
 
             {error && (

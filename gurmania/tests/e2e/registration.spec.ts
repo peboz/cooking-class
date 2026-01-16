@@ -29,6 +29,7 @@ test.describe('User Registration Flow - E2E', () => {
     await page.fill('input[name="email"], input[type="email"]', testEmail);
     await page.fill('input[name="password"], input[type="password"]', testPassword);
     await page.fill('input[id="confirmPassword"], input[name="confirmPassword"]', testPassword);
+    await page.check('input[id="terms"]');
 
     // Korak 3: Screenshot prije submita
     await page.screenshot({ path: 'test-results/e2e-registration-form-filled.png' });
@@ -76,6 +77,7 @@ test.describe('User Registration Flow - E2E', () => {
     await page.fill('input[name="email"], input[type="email"]', duplicateEmail);
     await page.fill('input[name="password"], input[type="password"]', 'Password123!');
     await page.fill('input[id="confirmPassword"], input[name="confirmPassword"]', 'Password123!');
+    await page.check('input[id="terms"]');
     await page.click('button[type="submit"]');
 
     // Čekaj da se procesira
@@ -87,6 +89,7 @@ test.describe('User Registration Flow - E2E', () => {
     await page.fill('input[name="email"], input[type="email"]', duplicateEmail);
     await page.fill('input[name="password"], input[type="password"]', 'Password456!');
     await page.fill('input[id="confirmPassword"], input[name="confirmPassword"]', 'Password456!');
+    await page.check('input[id="terms"]');
     await page.click('button[type="submit"]');
 
     // OČEKIVANI IZLAZ: Error poruka o postojećem emailu
@@ -94,5 +97,25 @@ test.describe('User Registration Flow - E2E', () => {
     await expect(errorMessage).toBeVisible({ timeout: 5000 });
 
     await page.screenshot({ path: 'test-results/e2e-registration-duplicate.png' });
+  });
+
+  test('should show error when terms are not accepted', async ({ page }) => {
+    // ULAZNI PODACI: Sve ispravno osim što nisu prihvaćeni uvjeti
+    const testEmail = `test-terms-${Date.now()}@fer.hr`;
+
+    // Korak 1: Popuni formu ali ne označi checkbox
+    await page.fill('input[name="name"], input[type="text"]', 'Test User');
+    await page.fill('input[name="email"], input[type="email"]', testEmail);
+    await page.fill('input[name="password"], input[type="password"]', 'TestPassword123!');
+    await page.fill('input[id="confirmPassword"], input[name="confirmPassword"]', 'TestPassword123!');
+    // Namjerno ne označavamo checkbox
+
+    // Korak 2: Submit formu
+    await page.click('button[type="submit"]');
+
+    // OČEKIVANI IZLAZ: Error poruka o prihvaćanju uvjeta
+    await expect(page.getByText(/morate prihvatiti uvjete/i)).toBeVisible({ timeout: 5000 });
+
+    await page.screenshot({ path: 'test-results/e2e-registration-terms-validation.png' });
   });
 });
