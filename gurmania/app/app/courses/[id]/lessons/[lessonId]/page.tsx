@@ -12,6 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -19,7 +27,8 @@ import {
   Clock, 
   ShoppingCart,
   AlertCircle,
-  Home
+  Home,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -74,8 +83,9 @@ export default function LessonViewerPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCompleting, setIsCompleting] = useState(false);
   const [isInstructor, setIsInstructor] = useState(false);
+  const [showLockedDialog, setShowLockedDialog] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
     fetchLesson();
@@ -104,6 +114,14 @@ export default function LessonViewerPage() {
       
       if (!response.ok) {
         const data = await response.json();
+        
+        // Check if this is a locked lesson error
+        if (response.status === 403 && data.locked) {
+          setShowLockedDialog(true);
+          setError(data.error || 'Lekcija je zaključana');
+          return;
+        }
+        
         throw new Error(data.error || 'Failed to fetch lesson');
       }
 
@@ -114,6 +132,30 @@ export default function LessonViewerPage() {
       setError(err instanceof Error ? err.message : 'Greška pri učitavanju lekcije');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateShoppingList = async () => {
+    if (!lesson) return;
+    
+    try {
+      const response = await fetch('/api/shopping-lists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessonId: lesson.id,
+          title: `${lesson.course.title} - ${lesson.title}`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create shopping list');
+      }
+
+      alert('Lista za kupovinu je stvorena!');
+    } catch (err) {
+      console.error('Error creating shopping list:', err);
+      alert('Greška pri stvaranju liste za kupovinu');
     }
   };
 
@@ -157,30 +199,6 @@ export default function LessonViewerPage() {
     }
   };
 
-  const handleGenerateShoppingList = async () => {
-    if (!lesson) return;
-    
-    try {
-      const response = await fetch('/api/shopping-lists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lessonId: lesson.id,
-          title: `${lesson.course.title} - ${lesson.title}`,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create shopping list');
-      }
-
-      alert('Lista za kupovinu je stvorena!');
-    } catch (err) {
-      console.error('Error creating shopping list:', err);
-      alert('Greška pri stvaranju liste za kupovinu');
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -209,15 +227,34 @@ export default function LessonViewerPage() {
         <main className="flex-1 container mx-auto px-4 py-8">
           <Card className="max-w-2xl mx-auto">
             <CardContent className="p-12 text-center space-y-4">
-              <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
-              <h2 className="text-2xl font-bold">Greška</h2>
-              <p className="text-muted-foreground">{error || 'Lekcija nije pronađena'}</p>
-              <Button asChild>
-                <Link href={`/app/courses/${courseId}`}>
-                  <Home className="h-4 w-4 mr-2" />
-                  Povratak na tečaj
-                </Link>
-              </Button>
+              {showLockedDialog ? (
+                <>
+                  <Lock className="h-16 w-16 text-orange-500 mx-auto" />
+                  <h2 className="text-2xl font-bold">Lekcija je zaključana</h2>
+                  <p className="text-muted-foreground">{error}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Morate završiti sve kvizove iz prethodnih modula prije nego što možete pristupiti ovoj lekciji.
+                  </p>
+                  <Button asChild>
+                    <Link href={`/app/courses/${courseId}`}>
+                      <Home className="h-4 w-4 mr-2" />
+                      Povratak na tečaj
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+                  <h2 className="text-2xl font-bold">Greška</h2>
+                  <p className="text-muted-foreground">{error || 'Lekcija nije pronađena'}</p>
+                  <Button asChild>
+                    <Link href={`/app/courses/${courseId}`}>
+                      <Home className="h-4 w-4 mr-2" />
+                      Povratak na tečaj
+                    </Link>
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </main>
@@ -280,41 +317,11 @@ export default function LessonViewerPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Quiz Section */}
-            {lesson.quiz && (
-              <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-orange-600" />
-                    {lesson.quiz.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    {lesson.quizPassed ? (
-                      <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                        <CheckCircle className="h-5 w-5" />
-                        <span className="font-medium">Prošli ste kviz!</span>
-                      </div>
-                    ) : (
-                      <>
-                        <p>Testirajte svoje znanje nakon što pogledate lekciju.</p>
-                        {lesson.quiz.passingScore !== null && (
-                          <p className="mt-2">
-                            <span className="font-medium">Minimalni prolazni rezultat:</span>{' '}
-                            {lesson.quiz.passingScore}%
-                          </p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  <Button asChild className="w-full sm:w-auto">
-                    <Link href={`/app/quiz/${lesson.quiz.id}?returnUrl=/app/courses/${courseId}/lessons/${lesson.id}`}>
-                      {lesson.quizPassed ? 'Pokušaj ponovno' : 'Pokreni kviz'}
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+            {/* Video player */}
+            {lesson.videoUrl && (
+              <div>
+                <YouTubeEmbed videoUrl={lesson.videoUrl} />
+              </div>
             )}
 
             {/* Recipe steps */}
@@ -332,11 +339,46 @@ export default function LessonViewerPage() {
               </Card>
             )}
 
-            {/* Video player */}
-            {lesson.videoUrl && (
-              <div>
-                <YouTubeEmbed videoUrl={lesson.videoUrl} />
-              </div>
+            {/* Quiz Section */}
+            {lesson.quiz && (
+              <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-orange-600" />
+                    {lesson.quiz.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-sm">
+                    {lesson.quizPassed ? (
+                      <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                        <CheckCircle className="h-5 w-5" />
+                        <span className="font-medium">Uspješno ste završili kviz i lekciju!</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">
+                          Morate riješiti kviz kako biste završili ovu lekciju.
+                        </p>
+                        {lesson.quiz.passingScore !== null ? (
+                          <p className="text-muted-foreground">
+                            Minimalni prolazni rezultat: <span className="font-semibold text-orange-600">{lesson.quiz.passingScore}%</span>
+                          </p>
+                        ) : (
+                          <p className="text-muted-foreground">
+                            Riješite kviz kako biste označili lekciju kao završenu.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Button asChild className="w-full sm:w-auto">
+                    <Link href={`/app/quiz/${lesson.quiz.id}?returnUrl=/app/courses/${courseId}/lessons/${lesson.id}`}>
+                      {lesson.quizPassed ? 'Pokušaj ponovno' : 'Pokreni kviz'}
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
             )}
 
             {/* Navigation buttons */}
@@ -356,7 +398,8 @@ export default function LessonViewerPage() {
                 <div className="flex-1" />
               )}
 
-              {!lesson.userProgress.isCompleted && (
+              {/* Show mark complete button only for lessons without quiz */}
+              {!lesson.quiz && !lesson.userProgress.isCompleted && (
                 <Button 
                   onClick={handleMarkComplete}
                   disabled={isCompleting}

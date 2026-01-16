@@ -146,6 +146,79 @@ export async function GET(
       : 0;
     const isEnrolled = allProgress.length > 0;
 
+    // Check which modules are locked
+    // A module is locked if previous modules have quizzes that aren't all passed
+    const moduleLockStatus = await Promise.all(
+      courseData.modules.map(async (module: any, moduleIndex: number) => {
+        // First module is never locked
+        if (moduleIndex === 0) {
+          return { moduleId: module.id, isLocked: false };
+        }
+
+        // Get all previous modules
+        const previousModules = courseData.modules.slice(0, moduleIndex);
+
+        // Check if any previous module has incomplete quizzes
+        for (const prevModule of previousModules) {
+          // Get all lessons with quizzes in this module
+          const lessonsWithQuizzes = await prisma.lesson.findMany({
+            where: {
+              moduleId: prevModule.id,
+            },
+            include: {
+              quiz: {
+                select: {
+                  id: true,
+                  passingScore: true,
+                },
+              },
+            },
+          });
+
+          const quizzesInModule = lessonsWithQuizzes.filter(l => l.quiz !== null);
+
+          // If no quizzes, skip this module
+          if (quizzesInModule.length === 0) {
+            continue;
+          }
+
+          // Check if all quizzes in this module are passed
+          for (const lesson of quizzesInModule) {
+            if (!lesson.quiz) continue;
+
+            const submission = await prisma.quizSubmission.findFirst({
+              where: {
+                quizId: lesson.quiz.id,
+                userId: session.user.id,
+              },
+              orderBy: {
+                submittedAt: 'desc',
+              },
+            });
+
+            let quizPassed = false;
+            if (submission) {
+              if (lesson.quiz.passingScore === null) {
+                quizPassed = true;
+              } else {
+                quizPassed = (submission.score ?? 0) >= lesson.quiz.passingScore;
+              }
+            }
+
+            if (!quizPassed) {
+              return { moduleId: module.id, isLocked: true };
+            }
+          }
+        }
+
+        return { moduleId: module.id, isLocked: false };
+      })
+    );
+
+    const lockedModules = moduleLockStatus
+      .filter(m => m.isLocked)
+      .map(m => m.moduleId);
+
     return NextResponse.json({
       id: course.id,
       title: course.title,
@@ -202,6 +275,7 @@ export async function GET(
         lessonId: p.lessonId,
         completed: p.completed,
       })),
+      lockedModules,
     });
   } catch (error) {
     console.error('Error fetching course:', error);

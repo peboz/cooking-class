@@ -100,6 +100,76 @@ export async function GET(
           { status: 403 }
         );
       }
+
+      // Check if previous modules' quizzes are completed
+      // Get all modules for this course ordered by order field
+      const allModules = await prisma.module.findMany({
+        where: { courseId: courseId },
+        include: {
+          lessons: {
+            include: {
+              quiz: {
+                select: {
+                  id: true,
+                  passingScore: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { order: 'asc' },
+      });
+
+      // Find current module's order
+      const currentModule = allModules.find(m => m.id === lesson.moduleId);
+      if (!currentModule) {
+        return NextResponse.json(
+          { error: 'Modul nije pronađen' },
+          { status: 404 }
+        );
+      }
+
+      // Check all previous modules
+      const previousModules = allModules.filter(m => m.order < currentModule.order);
+      
+      for (const prevModule of previousModules) {
+        // Check if this module has any quizzes
+        const quizzesInModule = prevModule.lessons
+          .map(l => l.quiz)
+          .filter(q => q !== null);
+
+        if (quizzesInModule.length === 0) {
+          // No quizzes in this module, skip it
+          continue;
+        }
+
+        // Check if all quizzes in this module are passed
+        for (const lesson of prevModule.lessons) {
+          if (!lesson.quiz) continue;
+
+          // Check if there's ANY passing submission (not just the most recent)
+          const passingSubmission = await prisma.quizSubmission.findFirst({
+            where: {
+              quizId: lesson.quiz.id,
+              userId: session.user.id,
+              ...(lesson.quiz.passingScore !== null 
+                ? { score: { gte: lesson.quiz.passingScore } }
+                : {}
+              ),
+            },
+          });
+
+          if (!passingSubmission) {
+            return NextResponse.json(
+              { 
+                error: 'Morate završiti sve kvizove iz prethodnih modula prije pristupa ovoj lekciji',
+                locked: true,
+              },
+              { status: 403 }
+            );
+          }
+        }
+      }
     }
 
     // Find next and previous lessons
@@ -125,23 +195,22 @@ export async function GET(
     // Check if quiz is passed
     let quizPassed = false;
     if (lesson.quiz) {
-      const submission = await prisma.quizSubmission.findFirst({
+      // Check if there's ANY passing submission (not just the most recent)
+      const passingSubmission = await prisma.quizSubmission.findFirst({
         where: {
           quizId: lesson.quiz.id,
           userId: session.user.id,
+          ...(lesson.quiz.passingScore !== null 
+            ? { score: { gte: lesson.quiz.passingScore } }
+            : {}
+          ),
         },
         orderBy: {
           submittedAt: 'desc',
         },
       });
 
-      if (submission) {
-        if (lesson.quiz.passingScore === null) {
-          quizPassed = true;
-        } else {
-          quizPassed = (submission.score ?? 0) >= lesson.quiz.passingScore;
-        }
-      }
+      quizPassed = passingSubmission !== null;
     }
 
     return NextResponse.json({
