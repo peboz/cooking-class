@@ -49,7 +49,6 @@ export default function InstructorQuizPage({
   const [success, setSuccess] = useState<string | null>(null);
   const [lessonTitle, setLessonTitle] = useState<string>('');
   const [courseTitle, setCourseTitle] = useState<string>('');
-  // const [moduleTitle, setModuleTitle] = useState<string>(''); // Unused
 
   const [formData, setFormData] = useState<QuizFormData>({
     title: '',
@@ -75,7 +74,6 @@ export default function InstructorQuizPage({
         if (lessonRes.ok) {
           const lessonData = await lessonRes.json();
           setLessonTitle(lessonData.lesson.title);
-          setModuleTitle(lessonData.lesson.module.title);
           setCourseTitle(lessonData.lesson.module.course.title);
 
           if (lessonData.lesson.quiz) {
