@@ -56,8 +56,6 @@ test.describe('User Registration Flow - E2E', () => {
     // OČEKIVANI IZLAZ: Prikaži validation errore
     // HTML5 validation ili custom validation
     const nameInput = page.locator('input[name="name"], input[type="text"]').first();
-    const emailInput = page.locator('input[name="email"], input[type="email"]');
-    const passwordInput = page.locator('input[name="password"], input[type="password"]');
 
     // Check for HTML5 validation or error messages
     const hasValidationError = 

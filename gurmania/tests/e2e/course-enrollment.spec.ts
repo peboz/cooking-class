@@ -7,17 +7,6 @@
 
 import { test, expect } from '@playwright/test';
 
-// Helper function to login
-async function loginAsStudent(page: any, email: string, password: string) {
-  await page.goto('/auth/login');
-  await page.fill('input[name="email"], input[type="email"]', email);
-  await page.fill('input[name="password"], input[type="password"]', password);
-  await page.click('button[type="submit"]');
-  // Wait for navigation after login
-  await page.waitForURL(/dashboard|app|courses/, { timeout: 10000 }).catch(() => {});
-  await page.waitForTimeout(1000);
-}
-
 test.describe('Course Enrollment Flow - E2E', () => {
   // Note: This test requires a pre-existing verified user and published course in the database
   // For CI/CD, you'd seed the database with test data

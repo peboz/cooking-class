@@ -6,10 +6,10 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { POST } from '@/app/api/auth/register/route';
-import { createMockPrisma, resetMockPrisma } from '@/tests/helpers/db-helpers';
+import { createMockPrisma } from '@/tests/helpers/db-helpers';
 
 // Mock dependencies BEFORE importing
 vi.mock('@/prisma');

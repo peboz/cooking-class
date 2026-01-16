@@ -9,7 +9,7 @@ import { prisma } from "@/prisma"
 // Helper function to format course data
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatCourse(course: any) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const lessonCount = course.modules?.reduce(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (acc: number, module: any) => acc + (module.lessons?.length || 0),
@@ -21,7 +21,7 @@ function formatCourse(course: any) {
     ? course.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / course.reviews.length
     : 0;
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const totalDuration = course.modules?.reduce(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (acc: number, module: any) => 

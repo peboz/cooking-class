@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/auth/register/route';
-import { createMockPrisma, resetMockPrisma } from '@/tests/helpers/db-helpers';
+import { createMockPrisma } from '@/tests/helpers/db-helpers';
 import { testUsers } from '@/tests/fixtures/test-data';
 
 // Mock dependencies BEFORE importing

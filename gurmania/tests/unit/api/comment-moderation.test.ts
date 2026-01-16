@@ -5,7 +5,7 @@
  * API: PATCH /api/admin/comments/[commentId]
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 // Mock modules BEFORE importing anything that uses them
