@@ -11,10 +11,10 @@ export function Footer() {
             © {currentYear} Gurmania. Sva prava pridržana.
           </div>
           <div className="flex gap-6">
-            <Link href="/terms" className="hover:text-foreground transition-colors">
+            <Link href="/terms-of-service" className="hover:text-foreground transition-colors">
               Uvjeti korištenja
             </Link>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">
+            <Link href="/privacy-policy" className="hover:text-foreground transition-colors">
               Politika privatnosti
             </Link>
           </div>
