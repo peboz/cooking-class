@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { auth } from "@/auth"
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -10,11 +11,16 @@ export async function proxy(request: NextRequest) {
   
   const isLoggedIn = !!sessionToken
 
-  // Public auth routes (should redirect to /app if already logged in)
+  // Public auth routes (should redirect to /app if already logged in, except deactivated)
   const authRoutes = [
     "/auth/login",
     "/auth/register",
     "/auth/forgot-password",
+  ]
+  
+  // Special auth routes that don't redirect logged-in users
+  const specialAuthRoutes = [
+    "/auth/deactivated",
   ]
 
   // Protected routes (require authentication)
@@ -40,6 +46,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Allow access to special auth routes (like deactivated page)
+  if (specialAuthRoutes.some((route) => pathname.startsWith(route))) {
+    return NextResponse.next()
+  }
+
   // Redirect logged-in users away from auth pages
   if (isLoggedIn && authRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL("/app", request.url))
@@ -54,6 +65,18 @@ export async function proxy(request: NextRequest) {
   // Note: Role-based authorization (ADMIN check) is handled in the admin layout
   if (!isLoggedIn && adminRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL("/auth/login", request.url))
+  }
+
+  // Check if logged-in user is active (for protected routes)
+  if (isLoggedIn && protectedRoutes.some((route) => pathname.startsWith(route))) {
+    const session = await auth()
+    
+    if (session?.user?.isActive === false) {
+      // Redirect to account deactivated page
+      if (!pathname.startsWith("/auth/deactivated")) {
+        return NextResponse.redirect(new URL("/auth/deactivated", request.url))
+      }
+    }
   }
 
   return NextResponse.next()

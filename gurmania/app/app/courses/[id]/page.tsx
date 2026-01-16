@@ -87,13 +87,14 @@ interface CourseData {
   progress: Array<{
     lessonId: string | null;
   }>;
+  lockedModules: string[];
 }
 
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const courseId = params.courseId as string;
+  const courseId = params.id as string;
 
   const [course, setCourse] = useState<CourseData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -291,6 +292,8 @@ export default function CourseDetailPage() {
                       m.lessons.some((l: { id: string }) => !completedLessons.includes(l.id))
                     );
                     
+                    const isModuleLocked = course.lockedModules?.includes(module.id) || false;
+                    
                     return (
                       <ModuleSection 
                         key={module.id} 
@@ -301,6 +304,7 @@ export default function CourseDetailPage() {
                         isEnrolled={isEnrolled}
                         onUnenrolledClick={() => setShowEnrollDialog(true)}
                         shouldBeOpen={moduleIndex === firstIncompleteModuleIndex}
+                        isLocked={isModuleLocked}
                       />
                     );
                   })}
@@ -523,7 +527,8 @@ function ModuleSection({
   completedLessons,
   isEnrolled,
   onUnenrolledClick,
-  shouldBeOpen
+  shouldBeOpen,
+  isLocked = false
 }: { 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   module: any; 
@@ -533,24 +538,40 @@ function ModuleSection({
   isEnrolled: boolean;
   onUnenrolledClick: () => void;
   shouldBeOpen: boolean;
+  isLocked?: boolean;
 }) {
   // Check if all lessons in this module are completed
   const allLessonsCompleted = module.lessons.every((lesson: { id: string }) => 
     completedLessons.includes(lesson.id)
   );
+
+  const [showLockedDialog, setShowLockedDialog] = useState(false);
   
   return (
-    <details className="group" open={shouldBeOpen}>
+    <>
+    <details className="group" open={shouldBeOpen && !isLocked}>
       <summary className="flex items-center justify-between cursor-pointer p-4 rounded-lg hover:bg-muted/50 transition-colors">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <ChevronDown className="h-5 w-5 group-open:hidden" />
-            <ChevronUp className="h-5 w-5 hidden group-open:block" />
+            {isLocked ? (
+              <Lock className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <>
+                <ChevronDown className="h-5 w-5 group-open:hidden" />
+                <ChevronUp className="h-5 w-5 hidden group-open:block" />
+              </>
+            )}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold">{module.title}</span>
-              {allLessonsCompleted && isEnrolled && (
+              <span className={`font-semibold ${isLocked ? 'text-muted-foreground' : ''}`}>{module.title}</span>
+              {isLocked && (
+                <Badge variant="outline" className="text-xs">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Zaključano
+                </Badge>
+              )}
+              {allLessonsCompleted && isEnrolled && !isLocked && (
                 <Badge variant="default" className="bg-green-500 text-xs">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Završeno
@@ -574,7 +595,7 @@ function ModuleSection({
         {module.lessons.map((lesson: any, lessonIndex: number) => {
           const isCompleted = completedLessons.includes(lesson.id);
           
-          return isEnrolled ? (
+          return isEnrolled && !isLocked ? (
             <Link 
               key={lesson.id}
               href={`/app/courses/${courseId}/lessons/${lesson.id}`}
@@ -607,6 +628,34 @@ function ModuleSection({
                 <Play className="h-4 w-4 opacity-0 group-hover/lesson:opacity-100 transition-opacity" />
               </div>
             </Link>
+          ) : isLocked ? (
+            <button
+              key={lesson.id}
+              onClick={() => setShowLockedDialog(true)}
+              className="w-full flex items-center gap-3 p-3 rounded-lg opacity-60 hover:opacity-80 hover:bg-muted/30 transition-all cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-3 flex-1">
+                <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="font-medium">
+                    {lessonIndex + 1}. {lesson.title}
+                  </div>
+                  {lesson.description && (
+                    <div className="text-sm text-muted-foreground line-clamp-1">
+                      {lesson.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                {lesson.durationMin && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    <span>{lesson.durationMin} min</span>
+                  </div>
+                )}
+              </div>
+            </button>
           ) : (
             <button
               key={lesson.id}
@@ -639,5 +688,28 @@ function ModuleSection({
         })}
       </div>
     </details>
+
+    <Dialog open={showLockedDialog} onOpenChange={setShowLockedDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-orange-500" />
+            Modul je zaključan
+          </DialogTitle>
+          <DialogDescription>
+            Morate završiti sve kvizove iz prethodnih modula prije nego što možete pristupiti lekcijama u ovom modulu.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowLockedDialog(false)}
+          >
+            Zatvori
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

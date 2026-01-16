@@ -96,30 +96,40 @@ export async function GET(
     }
 
     // Type assertion to fix TypeScript inference issue with Prisma includes
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const courseData = course as any;
+    const courseData = course as {
+      modules: Array<{ id: string; title: string; description: string | null; order: number; lessons: Array<{ id: string; title: string; description: string | null; order: number; durationMin: number | null }> }>;
+      reviews: Array<{ id: string; rating: number; comment: string | null; createdAt: Date; user: { id: string; name: string | null; image: string | null } }>;
+      media: Array<{ id: string; type: string; url: string }>;
+      instructor: {
+        id: string;
+        name: string | null;
+        email: string | null;
+        image: string | null;
+        instructorProfile: {
+          bio: string | null;
+          specializations: string[];
+          verified: boolean;
+        } | null;
+      };
+      [key: string]: unknown;
+    };
 
     // Calculate stats
     const moduleCount = courseData.modules.length;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const lessonCount = courseData.modules.reduce(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (acc: number, module: any) => acc + module.lessons.length,
+      (acc: number, module) => acc + module.lessons.length,
       0
     );
     const avgRating = courseData.reviews.length > 0
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? courseData.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / courseData.reviews.length
+      ? courseData.reviews.reduce((acc: number, r) => acc + r.rating, 0) / courseData.reviews.length
       : 0;
     const totalReviews = courseData.reviews.length;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const thumbnail = courseData.media.find((m: any) => m.type === 'IMAGE')?.url || '/placeholder-course.jpg';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const thumbnail = courseData.media.find((m) => m.type === 'IMAGE')?.url || '/placeholder-course.jpg';
+     
     const totalDuration = courseData.modules.reduce(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (acc: number, module: any) => acc + module.lessons.reduce(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (lAcc: number, lesson: any) => lAcc + (lesson.durationMin || 0),
+      (acc: number, module) => acc + module.lessons.reduce(
+        (lAcc: number, lesson) => lAcc + (lesson.durationMin || 0),
         0
       ),
       0
@@ -141,10 +151,79 @@ export async function GET(
       .filter(p => p.completed)
       .map(p => p.lessonId)
       .filter(Boolean) as string[];
-    const progressPercentage = lessonCount > 0 
-      ? (completedLessons.length / lessonCount) * 100 
-      : 0;
-    const isEnrolled = allProgress.length > 0;
+
+    // Check which modules are locked
+    // A module is locked if previous modules have quizzes that aren't all passed
+    const moduleLockStatus = await Promise.all(
+      courseData.modules.map(async (module, moduleIndex) => {
+        // First module is never locked
+        if (moduleIndex === 0) {
+          return { moduleId: module.id, isLocked: false };
+        }
+
+        // Get all previous modules
+        const previousModules = courseData.modules.slice(0, moduleIndex);
+
+        // Check if any previous module has incomplete quizzes
+        for (const prevModule of previousModules) {
+          // Get all lessons with quizzes in this module
+          const lessonsWithQuizzes = await prisma.lesson.findMany({
+            where: {
+              moduleId: prevModule.id,
+            },
+            include: {
+              quiz: {
+                select: {
+                  id: true,
+                  passingScore: true,
+                },
+              },
+            },
+          });
+
+          const quizzesInModule = lessonsWithQuizzes.filter(l => l.quiz !== null);
+
+          // If no quizzes, skip this module
+          if (quizzesInModule.length === 0) {
+            continue;
+          }
+
+          // Check if all quizzes in this module are passed
+          for (const lesson of quizzesInModule) {
+            if (!lesson.quiz) continue;
+
+            const submission = await prisma.quizSubmission.findFirst({
+              where: {
+                quizId: lesson.quiz.id,
+                userId: session.user.id,
+              },
+              orderBy: {
+                submittedAt: 'desc',
+              },
+            });
+
+            let quizPassed = false;
+            if (submission) {
+              if (lesson.quiz.passingScore === null) {
+                quizPassed = true;
+              } else {
+                quizPassed = (submission.score ?? 0) >= lesson.quiz.passingScore;
+              }
+            }
+
+            if (!quizPassed) {
+              return { moduleId: module.id, isLocked: true };
+            }
+          }
+        }
+
+        return { moduleId: module.id, isLocked: false };
+      })
+    );
+
+    const lockedModules = moduleLockStatus
+      .filter(m => m.isLocked)
+      .map(m => m.moduleId);
 
     return NextResponse.json({
       id: course.id,
@@ -166,14 +245,12 @@ export async function GET(
           verified: courseData.instructor.instructorProfile.verified,
         } : null,
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      modules: courseData.modules.map((module: any) => ({
+      modules: courseData.modules.map((module) => ({
         id: module.id,
         title: module.title,
         description: module.description,
         order: module.order,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        lessons: module.lessons.map((lesson: any) => ({
+        lessons: module.lessons.map((lesson) => ({
           id: lesson.id,
           title: lesson.title,
           description: lesson.description,
@@ -181,8 +258,7 @@ export async function GET(
           durationMin: lesson.durationMin,
         })),
       })),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      reviews: courseData.reviews.map((review: any) => ({
+      reviews: courseData.reviews.map((review) => ({
         id: review.id,
         rating: review.rating,
         comment: review.comment,
@@ -193,7 +269,7 @@ export async function GET(
           image: review.user.image,
         },
       })),
-      media: courseData.media.map((m: { id: string; url: string; type: string }) => ({
+      media: courseData.media.map((m) => ({
         id: m.id,
         url: m.url,
         type: m.type,
@@ -202,6 +278,7 @@ export async function GET(
         lessonId: p.lessonId,
         completed: p.completed,
       })),
+      lockedModules,
     });
   } catch (error) {
     console.error('Error fetching course:', error);

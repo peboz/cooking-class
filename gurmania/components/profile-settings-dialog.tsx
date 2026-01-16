@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { User, ChefHat, AlertCircle } from "lucide-react"
+import { User, ChefHat, AlertCircle, Database, Download, Trash2 } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -41,6 +41,7 @@ const data = {
     { name: "Profil", icon: User },
     { name: "Personalizacija", icon: ChefHat },
     { name: "Postani instruktor", icon: ChefHat },
+    { name: "Moji podaci", icon: Database },
   ],
 }
 
@@ -83,6 +84,12 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
     verificationStatus?: string
     verificationReason?: string | null
   } | null>(null)
+
+  // Data management state
+  const [exportingData, setExportingData] = React.useState(false)
+  const [deletingAccount, setDeletingAccount] = React.useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = React.useState("")
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
 
   // Load profile data when dialog opens
   React.useEffect(() => {
@@ -354,6 +361,88 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
       return user.email[0].toUpperCase()
     }
     return "U"
+  }
+
+  const handleExportData = async () => {
+    setExportingData(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const response = await fetch('/api/profile/export-data', {
+        method: 'GET',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        setError(data.error || "Greška pri izvozul podataka")
+        return
+      }
+
+      // Get the blob and create download link
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      
+      // Get filename from response headers or use default
+      const contentDisposition = response.headers.get('Content-Disposition')
+      const filenameMatch = contentDisposition?.match(/filename="?(.+)"?/)
+      const filename = filenameMatch ? filenameMatch[1] : `gurmania-data-export-${new Date().toISOString().split('T')[0]}.json`
+      
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      setSuccess("Vaši podaci su uspješno preuzeti!")
+      setTimeout(() => setSuccess(""), 5000)
+    } catch (err) {
+      setError("Došlo je do greške prilikom izvoza podataka. Molimo pokušajte ponovno.")
+    } finally {
+      setExportingData(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'IZBRIŠI MOJ RAČUN') {
+      setError('Molimo upišite točnu potvrdnu frazu: IZBRIŠI MOJ RAČUN')
+      return
+    }
+
+    setDeletingAccount(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const response = await fetch('/api/profile/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmationPhrase: deleteConfirmation,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Došlo je do greške")
+        return
+      }
+
+      // Account deleted successfully
+      setSuccess(data.message)
+      
+      // Sign out and redirect to home page
+      setTimeout(() => {
+        window.location.href = '/api/auth/signout'
+      }, 2000)
+    } catch (err) {
+      setError("Došlo je do greške. Molimo pokušajte ponovno.")
+    } finally {
+      setDeletingAccount(false)
+    }
   }
 
   return (
@@ -776,6 +865,164 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
                       </Button>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Moji podaci Tab */}
+              {activeTab === "Moji podaci" && (
+                <div className="max-w-2xl space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Moji podaci</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Preuzmite sve svoje podatke ili trajno izbrišite svoj račun.
+                    </p>
+                  </div>
+
+                  {/* Export Data Section */}
+                  <div className="border rounded-lg p-6 space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                        <Download className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h3 className="text-lg font-semibold">Preuzmi moje podatke</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Preuzmite sva vaša osobna podatka u JSON formatu. To uključuje vaš profil, 
+                          tečajeve, napredak, komentare, recenzije i sve ostale podatke povezane s 
+                          vašim računom.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Izvoz podataka je u skladu s GDPR propisima i omogućava vam da pregledate 
+                          sve podatke koje čuvamo o vama.
+                        </p>
+                        <Button
+                          onClick={handleExportData}
+                          disabled={exportingData}
+                          variant="outline"
+                          className="mt-3 gap-2"
+                        >
+                          <Download className="w-4 h-4" />
+                          {exportingData ? "Priprema izvoza..." : "Preuzmi podatke (JSON)"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delete Account Section */}
+                  <div className="border border-red-200 dark:border-red-800 rounded-lg p-6 space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                        <Trash2 className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">
+                          Izbriši račun
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Trajno izbrišite svoj račun i sve povezane podatke. Ova radnja je 
+                          <strong className="text-red-600"> nepovratna</strong>.
+                        </p>
+                        
+                        {!showDeleteConfirm ? (
+                          <Button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            variant="destructive"
+                            className="mt-3 gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Izbriši moj račun
+                          </Button>
+                        ) : (
+                          <div className="mt-4 space-y-4 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-red-600 dark:text-red-400">
+                                ⚠️ Upozorenje - Ova radnja je nepovratna!
+                              </h4>
+                              <p className="text-sm">
+                                Brisanjem računa bit će trajno izbrisani:
+                              </p>
+                              <ul className="text-sm list-disc pl-6 space-y-1">
+                                <li>Vaš profil i svi osobni podaci</li>
+                                <li>Svi tečajevi koje ste kreirali (ako ste instruktor)</li>
+                                <li>Svi vaši komentari i recenzije</li>
+                                <li>Vaš napredak u tečajevima</li>
+                                <li>Svi certifikati</li>
+                                <li>Sve kupovne liste</li>
+                                <li>Sve notifikacije</li>
+                                <li>Svi ostali podaci povezani s vašim računom</li>
+                              </ul>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="delete-confirmation" className="text-sm font-semibold">
+                                Za potvrdu, upišite: <span className="text-red-600 font-mono">IZBRIŠI MOJ RAČUN</span>
+                              </Label>
+                              <Input
+                                id="delete-confirmation"
+                                type="text"
+                                placeholder="Upišite: IZBRIŠI MOJ RAČUN"
+                                value={deleteConfirmation}
+                                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                className="font-mono"
+                              />
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => {
+                                  setShowDeleteConfirm(false)
+                                  setDeleteConfirmation("")
+                                  setError("")
+                                }}
+                                variant="outline"
+                                disabled={deletingAccount}
+                              >
+                                Odustani
+                              </Button>
+                              <Button
+                                onClick={handleDeleteAccount}
+                                variant="destructive"
+                                disabled={deletingAccount || deleteConfirmation !== 'IZBRIŠI MOJ RAČUN'}
+                                className="gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                {deletingAccount ? "Brisanje..." : "Potvrdi brisanje"}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Error/Success Messages */}
+                  {error && (
+                    <div className="flex items-center gap-2 p-3 bg-destructive/15 text-destructive rounded-md text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      {error}
+                    </div>
+                  )}
+                  {success && (
+                    <div className="p-3 bg-green-50 border border-green-200 text-green-800 rounded-md text-sm">
+                      {success}
+                    </div>
+                  )}
+
+                  {/* Privacy Policy Link */}
+                  <div className="border-t pt-4 text-sm text-muted-foreground">
+                    <p>
+                      Za više informacija o tome kako postupamo s vašim podacima, 
+                      pročitajte našu{" "}
+                      <a 
+                        href="/privacy-policy" 
+                        target="_blank"
+                        className="text-orange-600 hover:text-orange-700 underline"
+                      >
+                        Politiku privatnosti
+                      </a>
+                      .
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

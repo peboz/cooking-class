@@ -30,6 +30,7 @@ import {
   Loader2,
   AlertCircle,
   Video,
+  ClipboardList,
 } from 'lucide-react';
 
 interface Lesson {
@@ -274,9 +275,17 @@ export default function LessonEditPage() {
           </div>
         </div>
         {!isNew && (
-          <Button variant="destructive" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Link href={`/app/instructor/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz`}>
+              <Button variant="outline">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Upravljaj kvizom
+              </Button>
+            </Link>
+            <Button variant="destructive" onClick={handleDelete}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
 
