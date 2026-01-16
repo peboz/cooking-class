@@ -403,12 +403,16 @@ export default function Home() {
                 Pridruži se tisućama polaznika koji uče kuhati od najboljih instruktora. Registriraj se danas.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button size="lg" variant="outline" className="rounded-xl text-lg px-8">
-                  Prijavi se
-                </Button>
-                <Button size="lg" className="bg-orange-600 hover:bg-orange-700 rounded-xl text-lg px-8">
-                  Registriraj se
-                </Button>
+                <Link href="/auth/login">
+                  <Button size="lg" variant="outline" className="rounded-xl text-lg px-8">
+                    Prijavi se
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button size="lg" className="bg-orange-600 hover:bg-orange-700 rounded-xl text-lg px-8">
+                    Registriraj se
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -433,12 +437,12 @@ export default function Home() {
                 Registriraj se
               </a>
               <span className="text-gray-400">|</span>
-              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 transition-colors">
-                Privatnost
-              </a>
-              <a href="#" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 transition-colors">
+              <Link href="/privacy-policy" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 transition-colors">
+                Politika privatnosti
+              </Link>
+              <Link href="/terms-of-service" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 transition-colors">
                 Uvjeti korištenja
-              </a>
+              </Link>
             </div>
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
