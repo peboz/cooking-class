@@ -160,7 +160,7 @@ export async function PATCH(
 
           if (question.options && question.options.length > 0) {
             await tx.questionOption.createMany({
-              data: question.options.map((opt: any) => ({
+              data: question.options.map((opt: { text: string; isCorrect?: boolean }) => ({
                 questionId: newQuestion.id,
                 text: opt.text,
                 isCorrect: opt.isCorrect || false,

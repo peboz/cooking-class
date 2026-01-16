@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
           if (question.options && question.options.length > 0) {
             await tx.questionOption.createMany({
-              data: question.options.map((opt: any) => ({
+              data: question.options.map((opt: { text: string; isCorrect?: boolean }) => ({
                 questionId: newQuestion.id,
                 text: opt.text,
                 isCorrect: opt.isCorrect || false,
@@ -120,10 +120,11 @@ export async function POST(request: NextRequest) {
   );
 
     return NextResponse.json({ quizId: quiz.id }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating quiz:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Greška pri kreiranju kviza';
     return NextResponse.json(
-      { error: error?.message || 'Greška pri kreiranju kviza' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

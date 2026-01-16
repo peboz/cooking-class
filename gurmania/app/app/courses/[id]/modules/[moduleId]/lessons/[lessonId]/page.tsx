@@ -233,7 +233,7 @@ export default async function LessonPage({ params }: PageProps) {
             <AlertTriangle className="w-4 h-4 text-orange-600" />
             <span className="text-sm font-medium">Alergeni:</span>
             <div className="flex gap-2">
-              {lesson.allergenTags.map((tag: string) => (
+              {(lesson.allergenTags as string[]).map((tag: string) => (
                 <Badge key={tag} variant="destructive" className="text-xs">
                   {tag}
                 </Badge>
@@ -339,7 +339,7 @@ export default async function LessonPage({ params }: PageProps) {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
-                  {lesson.ingredients.map((ingredient: any) => (
+                  {lesson.ingredients.map((ingredient: { id: string; name: string; quantity: number | null; unit: string | null }) => (
                     <li key={ingredient.id} className="flex justify-between text-sm">
                       <span>{ingredient.name}</span>
                       <span className="text-muted-foreground">

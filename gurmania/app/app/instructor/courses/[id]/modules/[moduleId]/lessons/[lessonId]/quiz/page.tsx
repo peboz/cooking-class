@@ -49,7 +49,7 @@ export default function InstructorQuizPage({
   const [success, setSuccess] = useState<string | null>(null);
   const [lessonTitle, setLessonTitle] = useState<string>('');
   const [courseTitle, setCourseTitle] = useState<string>('');
-  const [moduleTitle, setModuleTitle] = useState<string>('');
+  // const [moduleTitle, setModuleTitle] = useState<string>(''); // Unused
 
   const [formData, setFormData] = useState<QuizFormData>({
     title: '',
@@ -88,9 +88,9 @@ export default function InstructorQuizPage({
                 title: quizData.quiz.title,
                 passingScore: quizData.quiz.passingScore?.toString() || '',
                 randomized: quizData.quiz.randomized,
-                questions: quizData.quiz.questions.map((q: any) => ({
+                questions: quizData.quiz.questions.map((q: { text: string; options: Array<{ text: string; isCorrect: boolean }> }) => ({
                   text: q.text,
-                  options: q.options.map((o: any) => ({
+                  options: q.options.map((o: { text: string; isCorrect: boolean }) => ({
                     text: o.text,
                     isCorrect: o.isCorrect,
                   })),
@@ -289,9 +289,10 @@ export default function InstructorQuizPage({
 
       setSuccess('Kviz je uspješno spremljen!');
       setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving quiz:', err);
-      setError(err.message || 'Greška pri spremanju kviza');
+      const errorMessage = err instanceof Error ? err.message : 'Greška pri spremanju kviza';
+      setError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -318,9 +319,10 @@ export default function InstructorQuizPage({
       }
 
       router.push(`/app/instructor/courses/${id}/modules/${moduleId}/lessons/${lessonId}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting quiz:', err);
-      setError(err.message || 'Greška pri brisanju kviza');
+      const errorMessage = err instanceof Error ? err.message : 'Greška pri brisanju kviza';
+      setError(errorMessage);
       setIsSaving(false);
     }
   };

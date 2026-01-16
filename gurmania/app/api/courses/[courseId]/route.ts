@@ -96,32 +96,16 @@ export async function GET(
     }
 
     // Type assertion to fix TypeScript inference issue with Prisma includes
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const courseData = course as any;
+    const courseData = course as {
+      modules: Array<{ lessons: Array<{ durationMin: number | null }> }>;
+      reviews: Array<{ rating: number }>;
+      media: Array<{ type: string; url: string }>;
+      [key: string]: unknown;
+    };
 
     // Calculate stats
-    const moduleCount = courseData.modules.length;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const lessonCount = courseData.modules.reduce(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (acc: number, module: any) => acc + module.lessons.length,
-      0
-    );
-    const avgRating = courseData.reviews.length > 0
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? courseData.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / courseData.reviews.length
-      : 0;
-    const totalReviews = courseData.reviews.length;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const thumbnail = courseData.media.find((m: any) => m.type === 'IMAGE')?.url || '/placeholder-course.jpg';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const totalDuration = courseData.modules.reduce(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (acc: number, module: any) => acc + module.lessons.reduce(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (lAcc: number, lesson: any) => lAcc + (lesson.durationMin || 0),
-        0
-      ),
+      (acc: number, module) => acc + module.lessons.length,
       0
     );
 
@@ -141,15 +125,11 @@ export async function GET(
       .filter(p => p.completed)
       .map(p => p.lessonId)
       .filter(Boolean) as string[];
-    const progressPercentage = lessonCount > 0 
-      ? (completedLessons.length / lessonCount) * 100 
-      : 0;
-    const isEnrolled = allProgress.length > 0;
 
     // Check which modules are locked
     // A module is locked if previous modules have quizzes that aren't all passed
     const moduleLockStatus = await Promise.all(
-      courseData.modules.map(async (module: any, moduleIndex: number) => {
+      courseData.modules.map(async (module: { id: string; lessons: Array<unknown> }, moduleIndex: number) => {
         // First module is never locked
         if (moduleIndex === 0) {
           return { moduleId: module.id, isLocked: false };
@@ -239,8 +219,7 @@ export async function GET(
           verified: courseData.instructor.instructorProfile.verified,
         } : null,
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      modules: courseData.modules.map((module: any) => ({
+      modules: courseData.modules.map((module: { id: string; title: string; description: string | null; order: number; lessons: Array<{ id: string; title: string; description: string | null; order: number; durationMin: number | null }> }) => ({
         id: module.id,
         title: module.title,
         description: module.description,
