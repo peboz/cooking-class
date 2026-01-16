@@ -101,7 +101,7 @@ export async function GET(
 
     // Calculate stats
     const moduleCount = courseData.modules.length;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const lessonCount = courseData.modules.reduce(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (acc: number, module: any) => acc + module.lessons.length,
@@ -114,7 +114,7 @@ export async function GET(
     const totalReviews = courseData.reviews.length;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const thumbnail = courseData.media.find((m: any) => m.type === 'IMAGE')?.url || '/placeholder-course.jpg';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const totalDuration = courseData.modules.reduce(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (acc: number, module: any) => acc + module.lessons.reduce(
