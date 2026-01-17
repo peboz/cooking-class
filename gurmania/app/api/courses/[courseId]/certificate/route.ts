@@ -44,19 +44,12 @@ export async function POST(
 
     // If certificate exists AND has a PDF URL, return it
     if (existingCertificate && existingCertificate.pdfUrl) {
-      console.log('[Certificate] Existing certificate found with PDF:', existingCertificate.id);
       return NextResponse.json({
         id: existingCertificate.id,
         pdfUrl: existingCertificate.pdfUrl,
         issuedAt: existingCertificate.issuedAt.toISOString(),
         message: 'Certifikat već postoji',
       });
-    }
-
-    // If certificate exists but has no PDF, we'll regenerate it
-    if (existingCertificate && !existingCertificate.pdfUrl) {
-      console.log('[Certificate] Existing certificate found without PDF, regenerating...');
-      // Continue with PDF generation using existing certificate
     }
 
     // Get course details and verify completion
@@ -121,10 +114,8 @@ export async function POST(
     // Create certificate record first to get ID (or use existing one if it exists without PDF)
     let certificate;
     if (existingCertificate && !existingCertificate.pdfUrl) {
-      console.log('[Certificate] Using existing certificate record:', existingCertificate.id);
       certificate = existingCertificate;
     } else {
-      console.log('[Certificate] Creating new certificate record for user:', session.user.id, 'course:', courseId);
       certificate = await prisma.certificate.create({
         data: {
           userId: session.user.id,
@@ -145,10 +136,8 @@ export async function POST(
         },
       });
     }
-    console.log('[Certificate] Certificate record ready:', certificate.id);
 
     // Generate PDF certificate
-    console.log('[Certificate] Generating PDF certificate...');
     const result = await generateAndUploadCertificate(
       certificate.id,
       certificate.user.name || session.user.email || 'Korisnik',
@@ -156,7 +145,6 @@ export async function POST(
       course.instructor.name || 'Instruktor',
       certificate.issuedAt
     );
-    console.log('[Certificate] PDF generated and uploaded:', result.pdfUrl);
 
     // Update certificate with PDF URL
     const updatedCertificate = await prisma.certificate.update({
@@ -170,32 +158,21 @@ export async function POST(
         },
       },
     });
-    console.log('[Certificate] Certificate updated with PDF URL');
 
     // Send certificate via email
     if (certificate.user.email) {
       try {
-        console.log('[Certificate] Sending email to:', certificate.user.email);
         await sendCertificateEmail(
           certificate.user.email,
           certificate.user.name || 'Korisnik',
           certificate.course.title,
           result.pdfUrl
         );
-        console.log('[Certificate] Email sent successfully');
       } catch (emailError) {
-        console.error('[Certificate] Failed to send certificate email:', emailError);
+        console.error('Failed to send certificate email:', emailError);
         // Don't fail the request if email fails
       }
-    } else {
-      console.warn('[Certificate] No email address for user, skipping email');
     }
-
-    console.log('[Certificate] Returning response with certificate:', {
-      id: updatedCertificate.id,
-      pdfUrl: updatedCertificate.pdfUrl,
-      issuedAt: updatedCertificate.issuedAt,
-    });
 
     return NextResponse.json({
       id: updatedCertificate.id,

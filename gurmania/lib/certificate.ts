@@ -268,8 +268,6 @@ export async function generateAndUploadCertificate(
   issuedAt: Date
 ): Promise<{ pdfUrl: string }> {
   try {
-    console.log('[Certificate] Starting PDF generation for certificate:', certificateId);
-    
     // Generate PDF
     const pdfBuffer = await generateCertificatePDF(
       userName,
@@ -277,24 +275,19 @@ export async function generateAndUploadCertificate(
       instructorName,
       issuedAt
     );
-    console.log('[Certificate] PDF buffer generated, size:', pdfBuffer.length, 'bytes');
 
     // Upload to S3
     const timestamp = Date.now();
     const s3Key = `certificates/${certificateId}/${timestamp}.pdf`;
     
-    console.log('[Certificate] Uploading to S3 with key:', s3Key);
     await uploadToS3(pdfBuffer, s3Key, 'application/pdf');
-    
-    console.log('[Certificate] Getting public URL...');
     const pdfUrl = getPublicUrl(s3Key);
-    console.log('[Certificate] Public URL obtained:', pdfUrl);
 
     return {
       pdfUrl,
     };
   } catch (error) {
-    console.error('[Certificate] Error generating and uploading certificate:', error);
+    console.error('Error generating and uploading certificate:', error);
     throw error;
   }
 }

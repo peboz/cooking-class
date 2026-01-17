@@ -234,25 +234,19 @@ export default function CourseDetailPage() {
   const handleGenerateCertificate = async () => {
     try {
       setGeneratingCertificate(true);
-      console.log('Generating certificate for course:', courseId);
       
       const response = await fetch(`/api/courses/${courseId}/certificate`, {
         method: 'POST',
       });
-
-      console.log('Certificate response status:', response.status);
       
       if (!response.ok) {
         const data = await response.json();
-        console.error('Certificate generation failed:', data);
         throw new Error(data.error || 'Failed to generate certificate');
       }
 
       const data = await response.json();
-      console.log('Certificate generated successfully:', data);
       
       if (!data.id || !data.pdfUrl) {
-        console.error('Invalid certificate data received:', data);
         throw new Error('Neispravan odgovor s poslužitelja');
       }
       
