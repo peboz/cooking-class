@@ -7,6 +7,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { YouTubeEmbed } from '@/components/youtube-embed';
 import { CommentsSection } from '@/components/comments-section';
+import { CourseReviewDialog } from '@/components/course-review-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -78,6 +79,7 @@ export default function LessonViewerPage() {
   const [isInstructor, setIsInstructor] = useState(false);
   const [showLockedDialog, setShowLockedDialog] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
 
   useEffect(() => {
     fetchLesson();
@@ -178,6 +180,41 @@ export default function LessonViewerPage() {
         userProgress: { isCompleted: true },
       });
 
+      // Check if this is the last lesson
+      if (!lesson.navigation.nextLesson) {
+        // This is the last lesson - generate certificate automatically
+        try {
+          const certResponse = await fetch(`/api/courses/${courseId}/certificate`, {
+            method: 'POST',
+          });
+          
+          if (certResponse.ok) {
+            // Certificate generated successfully - notification will be shown from server
+          } else if (certResponse.status !== 409) {
+            // 409 means certificate already exists, which is fine
+            console.error('Failed to generate certificate');
+          }
+        } catch (certError) {
+          console.error('Error generating certificate:', certError);
+          // Don't block the flow - certificate can be generated later
+        }
+
+        // Check if user has reviewed the course
+        const reviewResponse = await fetch(`/api/courses/${courseId}/reviews`);
+        if (reviewResponse.ok) {
+          const reviewData = await reviewResponse.json();
+          const userReview = reviewData.reviews.find(
+            (r: { user: { id: string } }) => r.user.id === session?.user?.id
+          );
+          // Only show if user hasn't reviewed yet
+          if (!userReview) {
+            setShowReviewDialog(true);
+            return; // Don't navigate away
+          }
+        }
+      }
+
+      // 
       // Navigate to next lesson if available
       if (lesson.navigation.nextLesson) {
         router.push(`/app/courses/${courseId}/lessons/${lesson.navigation.nextLesson.id}`);
@@ -489,6 +526,20 @@ export default function LessonViewerPage() {
       </main>
 
       <Footer />
+
+      {/* Review Dialog - shown after completing last lesson */}
+      {lesson && (
+        <CourseReviewDialog
+          open={showReviewDialog}
+          onOpenChange={setShowReviewDialog}
+          courseId={courseId}
+          courseTitle={lesson.course.title}
+          onSuccess={() => {
+            // Refresh page or redirect to course page
+            router.push(`/app/courses/${courseId}`);
+          }}
+        />
+      )}
     </div>
   );
 }

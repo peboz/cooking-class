@@ -563,3 +563,106 @@ export async function sendReplyNotification(
     `,
   });
 }
+
+export async function sendCertificateEmail(
+  email: string,
+  userName: string,
+  courseTitle: string,
+  certificateUrl: string
+) {
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Čestitamo! Vaš certifikat za tečaj "${courseTitle}" - Gurmania`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .container {
+              background-color: #f9f9f9;
+              border-radius: 8px;
+              padding: 30px;
+              margin: 20px 0;
+            }
+            .celebration {
+              text-align: center;
+              font-size: 48px;
+              margin: 20px 0;
+            }
+            .button {
+              display: inline-block;
+              padding: 12px 24px;
+              background-color: #FF6B35;
+              color: #fff !important;
+              text-decoration: none;
+              border-radius: 6px;
+              margin: 20px 0;
+              font-weight: bold;
+            }
+            .certificate-box {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 20px;
+              border-radius: 8px;
+              margin: 20px 0;
+              text-align: center;
+            }
+            .footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              font-size: 12px;
+              color: #666;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="celebration">🎉 🏆 🎉</div>
+            <h2 style="text-align: center; color: #FF6B35;">Čestitamo, ${userName}!</h2>
+            <p style="text-align: center; font-size: 18px;">
+              Uspješno ste završili tečaj
+            </p>
+            
+            <div class="certificate-box">
+              <h3 style="margin: 0; font-size: 24px;">${courseTitle}</h3>
+            </div>
+
+            <p>
+              Jako smo ponosni na vaš trud i predanost! Vaš certifikat je spreman za preuzimanje.
+            </p>
+
+            <div style="text-align: center;">
+              <a href="${certificateUrl}" class="button">📥 Preuzmi certifikat (PDF)</a>
+            </div>
+
+            <p style="font-size: 14px; color: #666; margin-top: 30px;">
+              💡 <strong>Savjet:</strong> Spremite certifikat na sigurno mjesto ili ga podijeli na društvenim mrežama!
+            </p>
+
+            <div style="background-color: #fff; border-left: 4px solid #FF6B35; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0; font-size: 14px;">
+                <strong>Što dalje?</strong><br>
+                Istražite naše druge tečajeve i nastavite širiti svoje kulinarske vještine!
+              </p>
+            </div>
+
+            <div class="footer">
+              <p>Hvala što ste dio Gurmania zajednice!</p>
+              <p>Tim Gurmania</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}
