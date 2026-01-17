@@ -343,6 +343,7 @@ export default function CourseDetailPage() {
         <CourseTitle 
           title={course.title}
           instructor={course.instructor.name || 'Nepoznati instruktor'}
+          instructorId={course.instructor.id}
           level={difficultyMap[course.difficulty] || course.difficulty}
           duration={totalDuration > 0 ? `${Math.round(totalDuration / 60)} sati` : undefined}
           rating={avgRating > 0 ? avgRating.toFixed(1) : undefined}
@@ -624,9 +625,14 @@ export default function CourseDetailPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-semibold">{course.instructor.name}</div>
+                      <Link 
+                        href={`/profile/instructor/${course.instructor.id}`}
+                        className="font-semibold hover:text-orange-600 transition-colors cursor-pointer"
+                      >
+                        {course.instructor.name}
+                      </Link>
                       {course.instructor.instructorProfile?.verified && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs mt-1">
                           Verificiran
                         </Badge>
                       )}

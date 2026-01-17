@@ -32,6 +32,7 @@ export async function GET(
               select: {
                 bio: true,
                 specializations: true,
+                verified: true,
               },
             },
           },
