@@ -14,7 +14,7 @@ import { Search, Filter, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { DIFFICULTY_LEVELS } from '@/lib/constants';
+import { DIFFICULTY_LEVELS, CUISINE_TYPES, ALLERGENS } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +39,8 @@ function CourseBrowseContent() {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'newest');
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
-  const [cuisineType, setCuisineType] = useState('');
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
   const [isInstructor, setIsInstructor] = useState(false);
   const limit = 20;
@@ -48,7 +49,7 @@ function CourseBrowseContent() {
     fetchCourses();
     fetchUserProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, sortBy, selectedDifficulties, cuisineType, offset]);
+  }, [search, sortBy, selectedDifficulties, selectedCuisines, selectedAllergens, offset]);
 
   const fetchUserProfile = async () => {
     try {
@@ -70,9 +71,14 @@ function CourseBrowseContent() {
       if (search) params.append('search', search);
       if (sortBy) params.append('sortBy', sortBy);
       if (selectedDifficulties.length > 0) {
-        params.append('difficulty', selectedDifficulties[0]); // API supports single difficulty
+        params.append('difficulties', selectedDifficulties.join(','));
       }
-      if (cuisineType) params.append('cuisineType', cuisineType);
+      if (selectedCuisines.length > 0) {
+        params.append('cuisineTypes', selectedCuisines.join(','));
+      }
+      if (selectedAllergens.length > 0) {
+        params.append('allergens', selectedAllergens.join(','));
+      }
       params.append('limit', limit.toString());
       params.append('offset', offset.toString());
 
@@ -131,15 +137,34 @@ function CourseBrowseContent() {
     setOffset(0);
   };
 
+  const handleCuisineToggle = (cuisine: string) => {
+    setSelectedCuisines(prev => 
+      prev.includes(cuisine) 
+        ? prev.filter(c => c !== cuisine)
+        : [...prev, cuisine]
+    );
+    setOffset(0);
+  };
+
+  const handleAllergenToggle = (allergen: string) => {
+    setSelectedAllergens(prev => 
+      prev.includes(allergen) 
+        ? prev.filter(a => a !== allergen)
+        : [...prev, allergen]
+    );
+    setOffset(0);
+  };
+
   const clearFilters = () => {
     setSearch('');
     setSelectedDifficulties([]);
-    setCuisineType('');
+    setSelectedCuisines([]);
+    setSelectedAllergens([]);
     setSortBy('newest');
     setOffset(0);
   };
 
-  const hasFilters = search || selectedDifficulties.length > 0 || cuisineType;
+  const hasFilters = search || selectedDifficulties.length > 0 || selectedCuisines.length > 0 || selectedAllergens.length > 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -197,8 +222,10 @@ function CourseBrowseContent() {
                   <FilterSection 
                     selectedDifficulties={selectedDifficulties}
                     onDifficultyToggle={handleDifficultyToggle}
-                    cuisineType={cuisineType}
-                    onCuisineTypeChange={setCuisineType}
+                    selectedCuisines={selectedCuisines}
+                    onCuisineToggle={handleCuisineToggle}
+                    selectedAllergens={selectedAllergens}
+                    onAllergenToggle={handleAllergenToggle}
                   />
                 </div>
               </SheetContent>
@@ -221,12 +248,18 @@ function CourseBrowseContent() {
                   <X className="h-3 w-3 ml-1" />
                 </Button>
               ))}
-              {cuisineType && (
-                <Button variant="secondary" size="sm" onClick={() => setCuisineType('')}>
-                  {cuisineType}
+              {selectedCuisines.map(cuisine => (
+                <Button key={cuisine} variant="secondary" size="sm" onClick={() => handleCuisineToggle(cuisine)}>
+                  {cuisine}
                   <X className="h-3 w-3 ml-1" />
                 </Button>
-              )}
+              ))}
+              {selectedAllergens.map(allergen => (
+                <Button key={allergen} variant="secondary" size="sm" onClick={() => handleAllergenToggle(allergen)}>
+                  Bez: {allergen}
+                  <X className="h-3 w-3 ml-1" />
+                </Button>
+              ))}
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 Očisti sve
               </Button>
@@ -241,8 +274,10 @@ function CourseBrowseContent() {
               <FilterSection 
                 selectedDifficulties={selectedDifficulties}
                 onDifficultyToggle={handleDifficultyToggle}
-                cuisineType={cuisineType}
-                onCuisineTypeChange={setCuisineType}
+                selectedCuisines={selectedCuisines}
+                onCuisineToggle={handleCuisineToggle}
+                selectedAllergens={selectedAllergens}
+                onAllergenToggle={handleAllergenToggle}
               />
             </div>
           </aside>
@@ -314,15 +349,19 @@ function CourseBrowseContent() {
 interface FilterSectionProps {
   selectedDifficulties: string[];
   onDifficultyToggle: (difficulty: string) => void;
-  cuisineType: string;
-  onCuisineTypeChange: (value: string) => void;
+  selectedCuisines: string[];
+  onCuisineToggle: (cuisine: string) => void;
+  selectedAllergens: string[];
+  onAllergenToggle: (allergen: string) => void;
 }
 
 function FilterSection({ 
   selectedDifficulties, 
   onDifficultyToggle, 
-  cuisineType, 
-  onCuisineTypeChange 
+  selectedCuisines,
+  onCuisineToggle,
+  selectedAllergens,
+  onAllergenToggle
 }: FilterSectionProps) {
   return (
     <>
@@ -348,12 +387,39 @@ function FilterSection({
       {/* Cuisine type filter */}
       <div>
         <h3 className="font-semibold mb-3">Vrsta kuhinje</h3>
-        <Input
-          type="text"
-          placeholder="npr. Talijanska"
-          value={cuisineType}
-          onChange={(e) => onCuisineTypeChange(e.target.value)}
-        />
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+          {CUISINE_TYPES.map(cuisine => (
+            <div key={cuisine} className="flex items-center space-x-2">
+              <Checkbox
+                id={`cuisine-${cuisine}`}
+                checked={selectedCuisines.includes(cuisine)}
+                onCheckedChange={() => onCuisineToggle(cuisine)}
+              />
+              <Label htmlFor={`cuisine-${cuisine}`} className="cursor-pointer">
+                {cuisine}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Allergen filter */}
+      <div>
+        <h3 className="font-semibold mb-3">Bez alergena</h3>
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+          {ALLERGENS.map(allergen => (
+            <div key={allergen} className="flex items-center space-x-2">
+              <Checkbox
+                id={`allergen-${allergen}`}
+                checked={selectedAllergens.includes(allergen)}
+                onCheckedChange={() => onAllergenToggle(allergen)}
+              />
+              <Label htmlFor={`allergen-${allergen}`} className="cursor-pointer">
+                {allergen}
+              </Label>
+            </div>
+          ))}
+        </div>
       </div>
     </>
   );

@@ -56,9 +56,14 @@ interface ShoppingListItem {
 export function Navbar({ user, isInstructor }: NavbarProps) {
   const [open, setOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [shoppingListOpen, setShoppingListOpen] = useState(false)
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([])
   const [loadingList, setLoadingList] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -169,44 +174,48 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
             >
               Pregledaj tečajeve
             </Link>
-            <Button
-              variant="outline"
-              className="relative w-full max-w-xs justify-start text-sm text-muted-foreground"
-              onClick={() => setOpen(true)}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Pretražite...</span>
-              <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                <span className="text-xs">⌘</span>K
-              </kbd>
-            </Button>
+            {mounted && (
+              <Button
+                variant="outline"
+                className="relative w-full max-w-xs justify-start text-sm text-muted-foreground"
+                onClick={() => setOpen(true)}
+              >
+                <Search className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Pretražite...</span>
+                <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                  <span className="text-xs">⌘</span>K
+                </kbd>
+              </Button>
+            )}
           </div>
 
           {/* Right - Shopping List & User Profile */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShoppingListOpen(true)}
-              className="relative"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              {shoppingList.length > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-orange-600 text-white text-xs flex items-center justify-center">
-                  {shoppingList.filter(item => !item.purchased).length}
-                </span>
-              )}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
-                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
-                  </Avatar>
-                  <span className="hidden md:inline-block">{user?.name || user?.email}</span>
+            {mounted && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShoppingListOpen(true)}
+                  className="relative"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {shoppingList.length > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-orange-600 text-white text-xs flex items-center justify-center">
+                      {shoppingList.filter(item => !item.purchased).length}
+                    </span>
+                  )}
                 </Button>
-              </DropdownMenuTrigger>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
+                        <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                      </Avatar>
+                      <span className="hidden md:inline-block">{user?.name || user?.email}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
@@ -242,12 +251,15 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
       {/* Command Dialog for Search */}
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      {mounted && (
+        <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Pretražite..." />
         <CommandList>
           <CommandEmpty>Nema rezultata.</CommandEmpty>
@@ -286,16 +298,19 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+      )}
 
       {/* Profile Settings Dialog */}
-      <ProfileSettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        user={user}
-      />
+      {mounted && (
+        <>
+          <ProfileSettingsDialog
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            user={user}
+          />
 
-      {/* Shopping List Dialog */}
-      <Dialog open={shoppingListOpen} onOpenChange={setShoppingListOpen}>
+          {/* Shopping List Dialog */}
+          <Dialog open={shoppingListOpen} onOpenChange={setShoppingListOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -369,6 +384,8 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
           )}
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </>
   )
 }
