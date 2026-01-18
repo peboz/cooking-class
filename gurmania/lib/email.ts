@@ -564,6 +564,124 @@ export async function sendReplyNotification(
   });
 }
 
+export async function sendWorkshopReminderEmail({
+  recipientEmail,
+  recipientName,
+  role,
+  workshop,
+  reminderLabel,
+}: {
+  recipientEmail: string;
+  recipientName: string;
+  role: "INSTRUCTOR" | "ATTENDEE";
+  workshop: {
+    id: string;
+    title: string;
+    startTime: Date;
+    durationMin: number;
+    instructorName: string;
+  };
+  reminderLabel: "24H" | "1H" | "10M";
+}) {
+  const workshopUrl = `${baseUrl}/app/workshops/${workshop.id}`;
+  const calendarUrl = `${baseUrl}/api/workshops/${workshop.id}/calendar`;
+  const formattedDate = workshop.startTime.toLocaleString("hr-HR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const reminderText =
+    reminderLabel === "24H"
+      ? "za 24 sata"
+      : reminderLabel === "1H"
+      ? "za 1 sat"
+      : "za 10 minuta";
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: recipientEmail,
+    subject: `Podsjetnik: ${workshop.title} počinje ${reminderText} - Gurmania`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .container {
+              background-color: #f9f9f9;
+              border-radius: 8px;
+              padding: 30px;
+              margin: 20px 0;
+            }
+            .button {
+              display: inline-block;
+              padding: 12px 24px;
+              background-color: #000;
+              color: #fff !important;
+              text-decoration: none;
+              border-radius: 6px;
+              margin: 20px 0;
+            }
+            .details {
+              background-color: #fff;
+              border-left: 4px solid #f97316;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            }
+            .footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              font-size: 12px;
+              color: #666;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Podsjetnik za radionicu</h2>
+            <p>Poštovani/a ${recipientName},</p>
+            <p>Radionica <strong>${workshop.title}</strong> počinje ${reminderText}.</p>
+
+            <div class="details">
+              <p><strong>Termin:</strong> ${formattedDate}</p>
+              <p><strong>Trajanje:</strong> ${workshop.durationMin} min</p>
+              <p><strong>Instruktor:</strong> ${workshop.instructorName}</p>
+              <p><strong>Vaša uloga:</strong> ${role === "INSTRUCTOR" ? "Instruktor" : "Polaznik"}</p>
+            </div>
+
+            <div style="text-align: center;">
+              <a href="${workshopUrl}" class="button">Otvori radionicu</a>
+            </div>
+
+            <p>Dodajte termin u svoj kalendar:</p>
+            <div style="text-align: center;">
+              <a href="${calendarUrl}" class="button" style="background-color: #f97316;">Dodaj u kalendar</a>
+            </div>
+
+            <div class="footer">
+              <p>Vidimo se uskoro!</p>
+              <p>Tim Gurmania</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}
+
 export async function sendCertificateEmail(
   email: string,
   userName: string,

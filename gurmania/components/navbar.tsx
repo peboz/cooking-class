@@ -174,19 +174,25 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
             >
               Pregledaj tečajeve
             </Link>
-            {mounted && (
-              <Button
-                variant="outline"
-                className="relative w-full max-w-xs justify-start text-sm text-muted-foreground"
-                onClick={() => setOpen(true)}
-              >
-                <Search className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Pretražite...</span>
-                <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                  <span className="text-xs">⌘</span>K
-                </kbd>
-              </Button>
-            )}
+            <Link 
+              href="/app/workshops" 
+              className="hidden md:inline-block text-sm font-medium hover:text-orange-600 transition-colors"
+            >
+              Live radionice
+            </Link>
+              {mounted && (
+                <Button
+                  variant="outline"
+                  className="relative w-full max-w-xs justify-start text-sm text-muted-foreground"
+                  onClick={() => setOpen(true)}
+                >
+                  <Search className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Pretražite...</span>
+                  <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
+                </Button>
+              )}
           </div>
 
           {/* Right - Shopping List & User Profile */}
