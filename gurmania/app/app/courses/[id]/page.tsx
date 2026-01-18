@@ -36,7 +36,9 @@ import {
   Edit,
   Trash2,
   MessageSquare,
-  Download
+  Download,
+  CalendarDays,
+  Users
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -98,6 +100,17 @@ interface CourseData {
   lockedModules: string[];
 }
 
+interface CourseWorkshop {
+  id: string;
+  title: string;
+  startTime: string;
+  durationMin?: number | null;
+  capacity?: number | null;
+  reservedCount: number;
+  isReserved: boolean;
+  isInstructor: boolean;
+}
+
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -113,6 +126,8 @@ export default function CourseDetailPage() {
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
   const [certificate, setCertificate] = useState<{ id: string; pdfUrl: string; issuedAt: string } | null>(null);
   const [generatingCertificate, setGeneratingCertificate] = useState(false);
+  const [courseWorkshops, setCourseWorkshops] = useState<CourseWorkshop[]>([]);
+  const [workshopsLoading, setWorkshopsLoading] = useState(true);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -124,9 +139,26 @@ export default function CourseDetailPage() {
       fetchCourse();
       fetchUserProfile();
       fetchCertificate();
+      fetchCourseWorkshops();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, courseId]);
+
+  const fetchCourseWorkshops = async () => {
+    try {
+      setWorkshopsLoading(true);
+      const response = await fetch(`/api/workshops?courseId=${courseId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch workshops');
+      }
+      const data = await response.json();
+      setCourseWorkshops(data.workshops || []);
+    } catch (error) {
+      console.error('Error fetching workshops:', error);
+    } finally {
+      setWorkshopsLoading(false);
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -403,6 +435,58 @@ export default function CourseDetailPage() {
                       />
                     );
                   })}
+                </CardContent>
+              </Card>
+
+              {/* Upcoming workshops */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Live radionice uz ovaj tečaj</CardTitle>
+                  <CardDescription>Pridružite se praktičnim radionicama povezanim s ovim tečajem.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {workshopsLoading ? (
+                    <Skeleton className="h-20 w-full" />
+                  ) : courseWorkshops.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Trenutno nema nadolazećih radionica.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {courseWorkshops.map((workshop) => {
+                        const start = new Date(workshop.startTime);
+                        return (
+                          <div key={workshop.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-4">
+                            <div className="space-y-2">
+                              <div className="font-medium">{workshop.title}</div>
+                              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <CalendarDays className="h-4 w-4" />
+                                  <span>{start.toLocaleString('hr-HR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                </div>
+                                {workshop.durationMin && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-4 w-4" />
+                                    <span>{workshop.durationMin} min</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-1">
+                                  <Users className="h-4 w-4" />
+                                  <span>{workshop.reservedCount}/{workshop.capacity ?? '∞'} mjesta</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/app/workshops/${workshop.id}`}>Detalji</Link>
+                              </Button>
+                              <Button size="sm" asChild>
+                                <Link href="/app/workshops">Rezerviraj mjesto</Link>
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
