@@ -55,9 +55,11 @@ export default function WorkshopLivePage() {
   const [loading, setLoading] = useState(true);
   const [jitsiToken, setJitsiToken] = useState<string | null>(null);
 
-  const fetchWorkshop = async () => {
+  const fetchWorkshop = async (options?: { silent?: boolean }) => {
     try {
-      setLoading(true);
+      if (!options?.silent) {
+        setLoading(true);
+      }
       const response = await fetch(`/api/workshops/${params.id}`);
       if (!response.ok) {
         const data = await response.json();
@@ -70,7 +72,9 @@ export default function WorkshopLivePage() {
       toast.error(error instanceof Error ? error.message : "Ne možemo učitati radionicu");
       router.push("/app/workshops");
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -85,7 +89,7 @@ export default function WorkshopLivePage() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchWorkshop();
+      fetchWorkshop({ silent: true });
     }, 15000);
 
     return () => clearInterval(interval);
