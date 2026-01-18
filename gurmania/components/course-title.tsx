@@ -14,7 +14,7 @@ export function CourseTitle( {title, instructor, instructorId, level, duration, 
     <section className="bg-gradient-to-b from-orange-100 to-orange-50 dark:from-gray-900 dark:to-gray-950 py-8 md:py-12 px-4 md:px-8 border-b border-orange-100 dark:border-gray-800">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white text-center mb-2 md:mb-3">{title}</h1>
-        <Link href={`/profile/instructor/${instructorId}`}>
+        <Link href={`/app/profile/instructor/${instructorId}`}>
           <h2 className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 text-center mb-6 md:mb-8 font-light hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer">{instructor}</h2>
         </Link>
         

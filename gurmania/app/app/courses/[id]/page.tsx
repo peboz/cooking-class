@@ -626,7 +626,7 @@ export default function CourseDetailPage() {
                     </Avatar>
                     <div>
                       <Link 
-                        href={`/profile/instructor/${course.instructor.id}`}
+                        href={`/app/profile/instructor/${course.instructor.id}`}
                         className="font-semibold hover:text-orange-600 transition-colors cursor-pointer"
                       >
                         {course.instructor.name}

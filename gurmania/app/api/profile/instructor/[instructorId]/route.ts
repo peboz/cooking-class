@@ -38,13 +38,6 @@ export async function GET(
       },
     });
 
-    console.log('Instructor data:', {
-      found: !!instructor,
-      role: instructor?.role,
-      hasProfile: !!instructor?.instructorProfile,
-      instructorId
-    });
-
     if (!instructor) {
       return NextResponse.json(
         { error: 'Korisnik nije pronađen' },
@@ -97,23 +90,30 @@ export async function GET(
     });
 
     // Transform courses data
-    const coursesData = courses.map((course: any) => {
+    const coursesData = courses.map((course) => {
       const lessonCount = course.modules.reduce(
-        (acc: number, module: any) => acc + module.lessons.length,
+        (acc: number, module) => acc + module.lessons.length,
         0
       );
       
       const avgRating = course.reviews.length > 0
-        ? course.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / course.reviews.length
+        ? course.reviews.reduce((acc: number, r) => acc + r.rating, 0) / course.reviews.length
         : 0;
 
-      const thumbnail = course.media.find((m: any) => m.type === 'IMAGE')?.url || '/placeholder-course.jpg';
+      const thumbnail = course.media.find((m) => m.type === 'IMAGE')?.url || '/placeholder-course.jpg';
+
+      // Map difficulty to Croatian
+      const difficultyMap: Record<string, string> = {
+        'EASY': 'Lako',
+        'MEDIUM': 'Srednje',
+        'HARD': 'Teško',
+      };
 
       return {
         id: course.id,
         title: course.title,
         instructor: instructor.name || 'Nepoznat instruktor',
-        level: course.difficulty,
+        level: difficultyMap[course.difficulty] || course.difficulty,
         rating: parseFloat(avgRating.toFixed(1)),
         lessonCount,
         image: thumbnail,
@@ -121,19 +121,10 @@ export async function GET(
       };
     });
 
-    // Calculate instructor's average rating from instructor reviews
-    const instructorReviews = await prisma.review.findMany({
-      where: {
-        instructorId,
-        targetType: 'INSTRUCTOR',
-      },
-      select: {
-        rating: true,
-      },
-    });
-
-    const avgInstructorRating = instructorReviews.length > 0
-      ? instructorReviews.reduce((acc: number, r: any) => acc + r.rating, 0) / instructorReviews.length
+    // Calculate instructor's average rating from their courses' ratings
+    const coursesWithRatings = coursesData.filter(course => course.rating > 0);
+    const avgInstructorRating = coursesWithRatings.length > 0
+      ? coursesWithRatings.reduce((acc, course) => acc + course.rating, 0) / coursesWithRatings.length
       : 0;
 
     // Calculate unique students count across all courses
@@ -162,7 +153,7 @@ export async function GET(
         avgRating: parseFloat(avgInstructorRating.toFixed(1)),
         totalStudents: uniqueStudents.length,
         totalCourses: courses.length,
-        reviewCount: instructorReviews.length,
+        reviewCount: coursesWithRatings.length,
       },
       courses: coursesData,
     });
