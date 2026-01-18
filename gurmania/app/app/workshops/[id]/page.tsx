@@ -287,7 +287,7 @@ export default function WorkshopLivePage() {
                   Početak za <span className="font-medium text-foreground">{minutesUntilStart} min</span>
                 </div>
               )}
-              <Button variant="outline" onClick={fetchWorkshop}>Provjeri ponovo</Button>
+              <Button variant="outline" onClick={() => fetchWorkshop()}>Provjeri ponovo</Button>
             </CardContent>
           </Card>
         ) : (
