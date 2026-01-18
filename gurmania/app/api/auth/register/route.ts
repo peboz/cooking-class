@@ -7,11 +7,18 @@ import { sendVerificationEmail } from '@/lib/email';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, name } = body;
+    const { email, password, name, termsAccepted } = body;
 
     if (!email || !password || !name) {
       return NextResponse.json(
         { error: 'Nedostaju obavezna polja' },
+        { status: 400 }
+      );
+    }
+
+    if (!termsAccepted) {
+      return NextResponse.json(
+        { error: 'Morate prihvatiti uvjete korištenja' },
         { status: 400 }
       );
     }

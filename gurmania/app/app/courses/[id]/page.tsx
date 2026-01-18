@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { CourseTitle } from "@/components/course-title"
+import { CourseReviewDialog } from "@/components/course-review-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -31,9 +32,17 @@ import {
   User,
   Award,
   CheckCircle,
-  Lock
+  Lock,
+  Edit,
+  Trash2,
+  MessageSquare,
+  Download,
+  CalendarDays,
+  Users
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
+import { toast } from "sonner"
 
 interface CourseData {
   id: string;
@@ -72,6 +81,7 @@ interface CourseData {
     id: string;
     rating: number;
     comment: string | null;
+    photoUrl: string | null;
     createdAt: Date;
     user: {
       id: string;
@@ -90,6 +100,17 @@ interface CourseData {
   lockedModules: string[];
 }
 
+interface CourseWorkshop {
+  id: string;
+  title: string;
+  startTime: string;
+  durationMin?: number | null;
+  capacity?: number | null;
+  reservedCount: number;
+  isReserved: boolean;
+  isInstructor: boolean;
+}
+
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -100,7 +121,13 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [isInstructor, setIsInstructor] = useState(false);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
+  const [certificate, setCertificate] = useState<{ id: string; pdfUrl: string; issuedAt: string } | null>(null);
+  const [generatingCertificate, setGeneratingCertificate] = useState(false);
+  const [courseWorkshops, setCourseWorkshops] = useState<CourseWorkshop[]>([]);
+  const [workshopsLoading, setWorkshopsLoading] = useState(true);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -111,9 +138,27 @@ export default function CourseDetailPage() {
     if (status === "authenticated") {
       fetchCourse();
       fetchUserProfile();
+      fetchCertificate();
+      fetchCourseWorkshops();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, courseId]);
+
+  const fetchCourseWorkshops = async () => {
+    try {
+      setWorkshopsLoading(true);
+      const response = await fetch(`/api/workshops?courseId=${courseId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch workshops');
+      }
+      const data = await response.json();
+      setCourseWorkshops(data.workshops || []);
+    } catch (error) {
+      console.error('Error fetching workshops:', error);
+    } finally {
+      setWorkshopsLoading(false);
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -169,6 +214,87 @@ export default function CourseDetailPage() {
       alert('Greška pri upisu na tečaj');
     } finally {
       setEnrolling(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('Jeste li sigurni da želite obrisati recenziju?')) {
+      return;
+    }
+
+    try {
+      setDeletingReviewId(reviewId);
+      const response = await fetch(`/api/courses/${courseId}/reviews/${reviewId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete review');
+      }
+
+      toast.success('Recenzija je uspješno obrisana');
+      await fetchCourse(); // Refresh to update reviews
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Greška pri brisanju recenzije'
+      );
+    } finally {
+      setDeletingReviewId(null);
+    }
+  };
+
+  const fetchCertificate = async () => {
+    try {
+      const response = await fetch(`/api/courses/${courseId}/certificate`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.id) {
+          setCertificate({
+            id: data.id,
+            pdfUrl: data.pdfUrl,
+            issuedAt: data.issuedAt,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching certificate:', error);
+    }
+  };
+
+  const handleGenerateCertificate = async () => {
+    try {
+      setGeneratingCertificate(true);
+      
+      const response = await fetch(`/api/courses/${courseId}/certificate`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to generate certificate');
+      }
+
+      const data = await response.json();
+      
+      if (!data.id || !data.pdfUrl) {
+        throw new Error('Neispravan odgovor s poslužitelja');
+      }
+      
+      setCertificate({
+        id: data.id,
+        pdfUrl: data.pdfUrl,
+        issuedAt: data.issuedAt,
+      });
+      toast.success('Certifikat je uspješno generiran i poslan na vašu e-mail adresu!');
+    } catch (error) {
+      console.error('Error generating certificate:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Greška pri generiranju certifikata'
+      );
+    } finally {
+      setGeneratingCertificate(false);
     }
   };
 
@@ -249,6 +375,7 @@ export default function CourseDetailPage() {
         <CourseTitle 
           title={course.title}
           instructor={course.instructor.name || 'Nepoznati instruktor'}
+          instructorId={course.instructor.id}
           level={difficultyMap[course.difficulty] || course.difficulty}
           duration={totalDuration > 0 ? `${Math.round(totalDuration / 60)} sati` : undefined}
           rating={avgRating > 0 ? avgRating.toFixed(1) : undefined}
@@ -311,48 +438,184 @@ export default function CourseDetailPage() {
                 </CardContent>
               </Card>
 
-              {/* Reviews */}
-              {course.reviews.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recenzije</CardTitle>
-                    <CardDescription>
-                      {course.reviews.length} recenzija • {avgRating.toFixed(1)} prosječna ocjena
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {course.reviews.map((review) => (
-                      <div key={review.id} className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={review.user.image || undefined} />
-                            <AvatarFallback>
-                              {review.user.name?.[0] || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="font-medium">{review.user.name}</div>
-                            <div className="flex items-center gap-1 text-sm text-yellow-500">
-                              {Array.from({ length: review.rating }).map((_, i) => (
-                                <Star key={i} className="h-3 w-3 fill-current" />
-                              ))}
+              {/* Upcoming workshops */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Live radionice uz ovaj tečaj</CardTitle>
+                  <CardDescription>Pridružite se praktičnim radionicama povezanim s ovim tečajem.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {workshopsLoading ? (
+                    <Skeleton className="h-20 w-full" />
+                  ) : courseWorkshops.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Trenutno nema nadolazećih radionica.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {courseWorkshops.map((workshop) => {
+                        const start = new Date(workshop.startTime);
+                        return (
+                          <div key={workshop.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-4">
+                            <div className="space-y-2">
+                              <div className="font-medium">{workshop.title}</div>
+                              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <CalendarDays className="h-4 w-4" />
+                                  <span>{start.toLocaleString('hr-HR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                </div>
+                                {workshop.durationMin && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-4 w-4" />
+                                    <span>{workshop.durationMin} min</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-1">
+                                  <Users className="h-4 w-4" />
+                                  <span>{workshop.reservedCount}/{workshop.capacity ?? '∞'} mjesta</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/app/workshops/${workshop.id}`}>Detalji</Link>
+                              </Button>
+                              <Button size="sm" asChild>
+                                <Link href="/app/workshops">Rezerviraj mjesto</Link>
+                              </Button>
                             </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(review.createdAt).toLocaleDateString('hr-HR')}
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Reviews */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Recenzije</CardTitle>
+                      <CardDescription>
+                        {course.reviews.length > 0 
+                          ? `${course.reviews.length} recenzija • ${avgRating.toFixed(1)} prosječna ocjena`
+                          : 'Još nema recenzija'
+                        }
+                      </CardDescription>
+                    </div>
+                    {/* Show "Rate Course" button if enrolled and all lessons completed */}
+                    {isEnrolled && progressPercentage === 100 && course.instructorId !== session?.user?.id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowReviewDialog(true)}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        {course.reviews.some(r => r.user.id === session?.user?.id) 
+                          ? 'Uredi recenziju' 
+                          : 'Ocijeni tečaj'
+                        }
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                {course.reviews.length > 0 && (
+                  <CardContent className="space-y-6">
+                    {course.reviews.map((review) => {
+                      const isOwnReview = review.user.id === session?.user?.id;
+                      const isAdmin = session?.user?.role === 'ADMIN';
+                      const canDelete = isOwnReview || isAdmin;
+
+                      return (
+                        <div key={review.id} className="space-y-3">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={review.user.image || undefined} />
+                              <AvatarFallback>
+                                {review.user.name?.[0] || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium flex items-center gap-2">
+                                    {review.user.name}
+                                    {isOwnReview && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        Vaša recenzija
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex items-center gap-0.5">
+                                      {Array.from({ length: 5 }).map((_, i) => (
+                                        <Star 
+                                          key={i} 
+                                          className={`h-4 w-4 ${
+                                            i < review.rating 
+                                              ? 'fill-yellow-400 text-yellow-400' 
+                                              : 'text-gray-300'
+                                          }`} 
+                                        />
+                                      ))}
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(review.createdAt).toLocaleDateString('hr-HR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                </div>
+                                {canDelete && (
+                                  <div className="flex gap-1">
+                                    {isOwnReview && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setShowReviewDialog(true)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteReview(review.id)}
+                                      disabled={deletingReviewId === review.id}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                              {review.comment && (
+                                <p className="text-sm text-muted-foreground">
+                                  {review.comment}
+                                </p>
+                              )}
+                              {review.photoUrl && (
+                                <div className="relative aspect-video w-full max-w-md overflow-hidden rounded-lg border mt-2">
+                                  <Image
+                                    src={review.photoUrl}
+                                    alt="Recenzija fotografija"
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
+                          {review !== course.reviews[course.reviews.length - 1] && (
+                            <Separator />
+                          )}
                         </div>
-                        {review.comment && (
-                          <p className="text-sm text-muted-foreground pl-11">
-                            {review.comment}
-                          </p>
-                        )}
-                        <Separator className="mt-4" />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </CardContent>
-                </Card>
-              )}
+                )}
+              </Card>
             </div>
 
             {/* Sidebar - RIGHT SIDE */}
@@ -446,9 +709,14 @@ export default function CourseDetailPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-semibold">{course.instructor.name}</div>
+                      <Link 
+                        href={`/app/profile/instructor/${course.instructor.id}`}
+                        className="font-semibold hover:text-orange-600 transition-colors cursor-pointer"
+                      >
+                        {course.instructor.name}
+                      </Link>
                       {course.instructor.instructorProfile?.verified && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs mt-1">
                           Verificiran
                         </Badge>
                       )}
@@ -476,6 +744,79 @@ export default function CourseDetailPage() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Certificate */}
+              {isEnrolled && progressPercentage === 100 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Award className="h-5 w-5 text-yellow-500" />
+                      Certifikat
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {certificate && certificate.pdfUrl ? (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          Čestitamo na završetku tečaja! Vaš certifikat je dostupan za preuzimanje.
+                        </p>
+                        <Button 
+                          className="w-full" 
+                          size="lg"
+                          onClick={() => window.open(certificate.pdfUrl, '_blank')}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Preuzmi certifikat
+                        </Button>
+                        <p className="text-xs text-center text-muted-foreground">
+                          Izdan {new Date(certificate.issuedAt).toLocaleDateString('hr-HR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          Čestitamo na završetku tečaja! Generirajte svoj certifikat kako biste ga dobili na e-mail i preuzeli.
+                        </p>
+                        <Button 
+                          className="w-full" 
+                          size="lg"
+                          onClick={handleGenerateCertificate}
+                          disabled={generatingCertificate}
+                        >
+                          <Award className="h-4 w-4 mr-2" />
+                          {generatingCertificate ? 'Generiranje...' : 'Generiraj certifikat'}
+                        </Button>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Motivational certificate card if not yet completed */}
+              {isEnrolled && progressPercentage < 100 && (
+                <Card className="border-yellow-200 dark:border-yellow-900 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Award className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                      Zaradite certifikat
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Završite sve lekcije u ovom tečaju i dobijte profesionalni certifikat koji možete dijeliti sa drugima!
+                    </p>
+                    <div className="flex items-center justify-between text-sm font-medium">
+                      <span>Vaš napredak:</span>
+                      <span className="text-yellow-600 dark:text-yellow-400">{progressPercentage.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={progressPercentage} className="h-2" />
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>
@@ -515,6 +856,20 @@ export default function CourseDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Review Dialog */}
+      <CourseReviewDialog
+        open={showReviewDialog}
+        onOpenChange={setShowReviewDialog}
+        courseId={courseId}
+        courseTitle={course.title}
+        existingReview={
+          course.reviews.find(r => r.user.id === session?.user?.id) || null
+        }
+        onSuccess={() => {
+          fetchCourse(); // Refresh to update reviews
+        }}
+      />
     </div>
   );
 }

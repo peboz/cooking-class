@@ -35,6 +35,7 @@ describe('Duplicate Email Registration - Error Handling', () => {
       email: 'existing@fer.hr',
       password: 'NewPassword123!',
       name: 'New User',
+      termsAccepted: true,
     };
 
     // Mock: korisnik već postoji
@@ -72,6 +73,7 @@ describe('Duplicate Email Registration - Error Handling', () => {
       email: 'oauth@fer.hr',
       password: 'Password123!',
       name: 'OAuth User',
+      termsAccepted: true,
     };
 
     // Mock: korisnik postoji preko OAuth-a (Google), ali nema lozinku
@@ -114,6 +116,7 @@ describe('Duplicate Email Registration - Error Handling', () => {
       email: 'multi-oauth@fer.hr',
       password: 'Password123!',
       name: 'Multi OAuth User',
+      termsAccepted: true,
     };
 
     // Mock: korisnik s više OAuth računa
@@ -150,6 +153,7 @@ describe('Duplicate Email Registration - Error Handling', () => {
       email: 'new@fer.hr',
       password: 'Password123!',
       name: 'New User',
+      termsAccepted: true,
     };
 
     // Mock: korisnik ne postoji

@@ -48,6 +48,7 @@ describe('Password Validation - Boundary Conditions', () => {
       email: 'test@fer.hr',
       password: '',
       name: 'Test User',
+      termsAccepted: true,
     };
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
@@ -69,6 +70,7 @@ describe('Password Validation - Boundary Conditions', () => {
       email: 'test@fer.hr',
       password: '12',
       name: 'Test User',
+      termsAccepted: true,
     };
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
@@ -90,6 +92,7 @@ describe('Password Validation - Boundary Conditions', () => {
       email: 'test@fer.hr',
       password: longPassword,
       name: 'Test User',
+      termsAccepted: true,
     };
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
@@ -111,6 +114,7 @@ describe('Password Validation - Boundary Conditions', () => {
       email: 'test@fer.hr',
       password: specialPassword,
       name: 'Test User',
+      termsAccepted: true,
     };
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {
@@ -134,6 +138,7 @@ describe('Password Validation - Boundary Conditions', () => {
       email: 'test@fer.hr',
       password: unicodePassword,
       name: 'Test User',
+      termsAccepted: true,
     };
 
     const request = new NextRequest('http://localhost:3000/api/auth/register', {

@@ -37,6 +37,7 @@ describe('User Registration API - Regular Case', () => {
       email: 'newuser@fer.hr',
       password: 'StrongPass123!',
       name: 'New User',
+      termsAccepted: true,
     };
 
     // Mock database response - user doesn't exist
@@ -100,9 +101,9 @@ describe('User Registration API - Regular Case', () => {
   it('should validate required fields', async () => {
     // Test missing fields
     const invalidRequests = [
-      { email: 'test@test.com', password: 'pass' }, // missing name
-      { email: 'test@test.com', name: 'Test' }, // missing password
-      { password: 'pass', name: 'Test' }, // missing email
+      { email: 'test@test.com', password: 'pass', termsAccepted: true }, // missing name
+      { email: 'test@test.com', name: 'Test', termsAccepted: true }, // missing password
+      { password: 'pass', name: 'Test', termsAccepted: true }, // missing email
     ];
 
     for (const body of invalidRequests) {
@@ -117,5 +118,26 @@ describe('User Registration API - Regular Case', () => {
       expect(response.status).toBe(400);
       expect(data.error).toContain('Nedostaju obavezna polja');
     }
+  });
+
+  it('should reject registration without accepting terms', async () => {
+    // Ulazni podaci bez prihvaćanja uvjeta
+    const requestBody = {
+      email: 'test@fer.hr',
+      password: 'StrongPass123!',
+      name: 'Test User',
+      termsAccepted: false,
+    };
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toContain('Morate prihvatiti uvjete korištenja');
   });
 });
