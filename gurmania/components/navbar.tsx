@@ -169,6 +169,12 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
             >
               Pregledaj tečajeve
             </Link>
+            <Link 
+              href="/app/workshops" 
+              className="hidden md:inline-block text-sm font-medium hover:text-orange-600 transition-colors"
+            >
+              Live radionice
+            </Link>
             <Button
               variant="outline"
               className="relative w-full max-w-xs justify-start text-sm text-muted-foreground"
