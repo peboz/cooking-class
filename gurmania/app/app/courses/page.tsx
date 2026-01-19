@@ -6,11 +6,12 @@ import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { CourseCard } from '@/components/course-card';
-import { Input } from '@/components/ui/input';
+import { InstructorCard } from '@/components/instructor-card';
+import { SearchAutocomplete } from '@/components/search-autocomplete';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, X } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -29,13 +30,22 @@ interface Course {
   image: string;
 }
 
+interface Instructor {
+  id: string;
+  name: string | null;
+  image: string | null;
+  verified: boolean;
+}
+
 function CourseBrowseContent() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   
   const [courses, setCourses] = useState<Course[]>([]);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [instructorsLoading, setInstructorsLoading] = useState(false);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'newest');
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
@@ -47,6 +57,11 @@ function CourseBrowseContent() {
 
   useEffect(() => {
     fetchCourses();
+    if (search) {
+      fetchInstructors();
+    } else {
+      setInstructors([]);
+    }
     fetchUserProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, sortBy, selectedDifficulties, selectedCuisines, selectedAllergens, offset]);
@@ -122,10 +137,40 @@ function CourseBrowseContent() {
     }
   };
 
+  const fetchInstructors = async () => {
+    if (!search) {
+      setInstructors([]);
+      return;
+    }
+
+    try {
+      setInstructorsLoading(true);
+      const params = new URLSearchParams();
+      params.append('search', search);
+
+      const response = await fetch(`/api/instructors?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch instructors');
+      }
+
+      const data = await response.json();
+      setInstructors(data.instructors || []);
+    } catch (error) {
+      console.error('Error fetching instructors:', error);
+      setInstructors([]);
+    } finally {
+      setInstructorsLoading(false);
+    }
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setOffset(0);
     fetchCourses();
+    if (search) {
+      fetchInstructors();
+    }
   };
 
   const handleDifficultyToggle = (difficulty: string) => {
@@ -179,20 +224,13 @@ function CourseBrowseContent() {
         {/* Search and filters */}
         <div className="mb-8 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search bar */}
-            <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Pretražite tečajeve..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button type="submit">Pretraži</Button>
-            </form>
+            {/* Search bar with autocomplete */}
+            <SearchAutocomplete
+              value={search}
+              onChange={setSearch}
+              onSubmit={handleSearchSubmit}
+              className="flex-1"
+            />
 
             {/* Sort dropdown */}
             <Select value={sortBy} onValueChange={(value) => { setSortBy(value); setOffset(0); }}>
@@ -335,6 +373,39 @@ function CourseBrowseContent() {
                 <Button onClick={clearFilters} className="mt-4">
                   Očisti filtere
                 </Button>
+              </div>
+            )}
+
+            {/* Instructor results section */}
+            {search && instructors.length > 0 && (
+              <div className="mt-12">
+                <h2 className="text-2xl font-bold mb-4">Instruktori</h2>
+                {instructorsLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-20 w-full rounded-lg" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4 text-sm text-muted-foreground">
+                      Pronađeno {instructors.length} {instructors.length === 1 ? 'instruktor' : 'instruktora'}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {instructors.map((instructor) => (
+                        <InstructorCard
+                          key={instructor.id}
+                          id={instructor.id}
+                          name={instructor.name}
+                          image={instructor.image}
+                          verified={instructor.verified}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
