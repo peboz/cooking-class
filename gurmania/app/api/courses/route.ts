@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || undefined;
-    const difficulty = searchParams.get('difficulty') as Difficulty | undefined;
-    const cuisineType = searchParams.get('cuisineType') || undefined;
+    const difficulties = searchParams.get('difficulties')?.split(',').filter(Boolean) as Difficulty[] | undefined;
+    const cuisineTypes = searchParams.get('cuisineTypes')?.split(',').filter(Boolean) || undefined;
     const allergens = searchParams.get('allergens')?.split(',').filter(Boolean) || undefined;
     const sortBy = searchParams.get('sortBy') || 'newest';
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -42,22 +42,22 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    if (difficulty) {
-      where.difficulty = difficulty;
+    if (difficulties && difficulties.length > 0) {
+      where.difficulty = { in: difficulties };
     }
 
-    if (cuisineType) {
-      where.cuisineType = { contains: cuisineType, mode: 'insensitive' };
+    if (cuisineTypes && cuisineTypes.length > 0) {
+      where.cuisineType = { in: cuisineTypes };
     }
 
     if (allergens && allergens.length > 0) {
-      // Find courses that don't have lessons with these allergens
+      // Exclude courses that have any lessons containing these allergens
       where.modules = {
-        some: {
+        every: {
           lessons: {
-            some: {
-              allergens: {
-                hasEvery: allergens,
+            none: {
+              allergenTags: {
+                hasSome: allergens,
               },
             },
           },
