@@ -142,7 +142,7 @@ export default function WorkshopLivePage() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} />
+        <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} isAdmin={session?.user?.role === 'ADMIN'} />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Card>
             <CardHeader>
@@ -162,7 +162,7 @@ export default function WorkshopLivePage() {
   if (!workshop) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} />
+        <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} isAdmin={session?.user?.role === 'ADMIN'} />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
@@ -184,7 +184,7 @@ export default function WorkshopLivePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} />
+      <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} isAdmin={session?.user?.role === 'ADMIN'} />
       <main className="flex-1 container mx-auto px-4 py-8 space-y-6">
         <Card>
           <CardHeader>

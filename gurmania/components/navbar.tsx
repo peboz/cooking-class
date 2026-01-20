@@ -29,7 +29,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ProfileSettingsDialog } from "@/components/profile-settings-dialog"
-import { Search, Settings, LogOut, ChefHat, ShoppingCart, Trash2 } from "lucide-react"
+import { Search, Settings, LogOut, ChefHat, ShoppingCart, Trash2, Shield } from "lucide-react"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 
@@ -40,6 +40,7 @@ interface NavbarProps {
     image?: string | null
   }
   isInstructor?: boolean
+  isAdmin?: boolean
 }
 
 interface ShoppingListItem {
@@ -53,7 +54,7 @@ interface ShoppingListItem {
   };
 }
 
-export function Navbar({ user, isInstructor }: NavbarProps) {
+export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
   const [open, setOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -234,6 +235,14 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
                     <Link href="/app/instructor">
                       <ChefHat className="mr-2 h-4 w-4" />
                       <span>Instruktorski panel</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Administratorski panel</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
