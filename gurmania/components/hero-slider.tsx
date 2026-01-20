@@ -29,7 +29,7 @@ export function HeroSlider({ coursesSet1, coursesSet2 }: HeroSliderProps) {
           {coursesSet1.map((course, index) => (
             <Card
               key={`${course.id}-${index}`}
-              className="w-full rounded-2xl overflow-hidden border-2 hover:border-orange-200 transition-colors p-0"
+              className="w-[280px] rounded-2xl overflow-hidden border-2 hover:border-orange-200 transition-colors p-0"
             >
               <div className="relative h-48 w-full">
                 <Image
@@ -58,7 +58,7 @@ export function HeroSlider({ coursesSet1, coursesSet2 }: HeroSliderProps) {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-xs">
-                    {course.level}
+                    Težina: {course.level}
                   </Badge>
                   {course.duration !== "N/A" && (
                     <Badge variant="secondary" className="text-xs flex items-center gap-1">
@@ -81,7 +81,7 @@ export function HeroSlider({ coursesSet1, coursesSet2 }: HeroSliderProps) {
           {coursesSet2.map((course, index) => (
             <Card
               key={`${course.id}-${index}`}
-              className="w-full rounded-2xl overflow-hidden border-2 hover:border-orange-200 transition-colors p-0"
+              className="w-[280px] rounded-2xl overflow-hidden border-2 hover:border-orange-200 transition-colors p-0"
             >
               <div className="relative h-48 w-full">
                 <Image
@@ -110,7 +110,7 @@ export function HeroSlider({ coursesSet1, coursesSet2 }: HeroSliderProps) {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-xs">
-                    {course.level}
+                    Težina: {course.level}
                   </Badge>
                   {course.duration !== "N/A" && (
                     <Badge variant="secondary" className="text-xs flex items-center gap-1">
