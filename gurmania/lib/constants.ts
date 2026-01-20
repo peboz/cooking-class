@@ -65,6 +65,38 @@ export const CUISINE_TYPES = [
   'Balkanska',
 ] as const;
 
+// Instructor specializations
+export const SPECIALIZATIONS = [
+  'Talijanska kuhinja',
+  'Francuska kuhinja',
+  'Japanska kuhinja',
+  'Kineska kuhinja',
+  'Mediteranska kuhinja',
+  'Balkanska kuhinja',
+  'Hrvatska kuhinja',
+  'Azijska kuhinja',
+  'Deserti i slastice',
+  'Pečenje kruha',
+  'Pečenje kolača',
+  'Veganska kuhinja',
+  'Vegetarijanska kuhinja',
+  'Zdrava prehrana',
+  'Brza jela',
+  'Fine dining',
+  'Street food',
+  'Grill i roštilj',
+  'Riba i plodovi mora',
+  'Meso',
+  'Testenine',
+  'Juhe i variva',
+  'Salate',
+  'Umaci i preljevi',
+  'Fermentacija',
+  'Konzerviranje',
+  'Kuhanje za djecu',
+  'Dijetetska prehrana',
+] as const;
+
 // Difficulty levels for courses and lessons
 export const DIFFICULTY_LEVELS = [
   { value: 'EASY', label: 'Lako' },
