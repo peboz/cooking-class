@@ -66,6 +66,13 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
   }, [])
 
   useEffect(() => {
+    // Fetch shopping list on mount if user is logged in
+    if (mounted && user) {
+      fetchShoppingList()
+    }
+  }, [mounted, user])
+
+  useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
@@ -155,6 +162,16 @@ export function Navbar({ user, isInstructor }: NavbarProps) {
       fetchShoppingList()
     }
   }, [shoppingListOpen])
+
+  useEffect(() => {
+    // Listen for shopping list updates from other components
+    const handleShoppingListUpdate = () => {
+      fetchShoppingList()
+    }
+
+    window.addEventListener('shopping-list-updated', handleShoppingListUpdate)
+    return () => window.removeEventListener('shopping-list-updated', handleShoppingListUpdate)
+  }, [])
 
   return (
     <>
