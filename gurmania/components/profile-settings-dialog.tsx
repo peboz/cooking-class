@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { User, ChefHat, AlertCircle, Database, Download, Trash2 } from "lucide-react"
+import { User, ChefHat, AlertCircle, Database, Download, Trash2, ChevronDown } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -19,6 +19,12 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Sidebar,
   SidebarContent,
@@ -447,7 +453,7 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 md:max-h-[700px] md:max-w-[800px] lg:max-w-[1000px]">
+      <DialogContent className="overflow-hidden p-0 max-h-[90vh] md:max-h-[700px] md:max-w-[800px] lg:max-w-[1000px]">
         <DialogTitle className="sr-only">Postavke profila</DialogTitle>
         <DialogDescription className="sr-only">
           Uredite svoje podatke profila ovdje.
@@ -484,15 +490,41 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
               </SidebarGroup>
             </SidebarContent>
           </Sidebar>
-          <main className="flex h-[650px] flex-1 flex-col overflow-hidden">
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-              <div className="flex items-center gap-2 px-4">
-                <Breadcrumb>
+          <main className="flex h-full max-h-[calc(90vh-2rem)] md:h-[650px] flex-1 flex-col overflow-hidden">
+            <header className="flex h-16 shrink-0 items-center gap-2 border-b md:border-b-0">
+              <div className="flex items-center gap-2 px-4 w-full">
+                {/* Mobile tab selector dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="md:hidden gap-2">
+                      <span>{activeTab}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[200px]">
+                    {data.nav.map((item) => (
+                      <DropdownMenuItem
+                        key={item.name}
+                        onClick={() => {
+                          setActiveTab(item.name)
+                          setError("")
+                          setSuccess("")
+                        }}
+                        className={item.name === activeTab ? "bg-orange-50 dark:bg-orange-950" : ""}
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.name}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                <Breadcrumb className="hidden md:block">
                   <BreadcrumbList>
-                    <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbItem>
                       <BreadcrumbLink href="#">Postavke</BreadcrumbLink>
                     </BreadcrumbItem>
-                    <BreadcrumbSeparator className="hidden md:block" />
+                    <BreadcrumbSeparator />
                     <BreadcrumbItem>
                       <BreadcrumbPage>{activeTab}</BreadcrumbPage>
                     </BreadcrumbItem>
@@ -500,7 +532,7 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
                 </Breadcrumb>
               </div>
             </header>
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 md:pt-0">
               {/* Profile Tab */}
               {activeTab === "Profil" && (
                 <div className="max-w-2xl space-y-6">
