@@ -301,7 +301,7 @@ export default function CourseDetailPage() {
   if (loading || status === "loading") {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <Navbar user={session?.user} isInstructor={isInstructor} />
+        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Skeleton className="h-32 w-full mb-8" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -369,7 +369,7 @@ export default function CourseDetailPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <Navbar user={session?.user} isInstructor={isInstructor} />
+      <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
       
       <main className="flex-1">
         <CourseTitle 

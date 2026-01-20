@@ -231,7 +231,7 @@ export default function QuizPage({
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href={`/app/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}>
+              <BreadcrumbLink href={`/app/courses/${courseId}/lessons/${lessonId}`}>
                 {quiz.lesson.title}
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -278,7 +278,7 @@ export default function QuizPage({
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button asChild variant="outline">
-                <Link href={returnUrl || `/app/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}>
+                <Link href={returnUrl || `/app/courses/${courseId}/lessons/${lessonId}`}>
                   Povratak na lekciju
                 </Link>
               </Button>
@@ -306,7 +306,7 @@ export default function QuizPage({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/app/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}>
+            <BreadcrumbLink href={`/app/courses/${courseId}/lessons/${lessonId}`}>
               {quiz.lesson.title}
             </BreadcrumbLink>
           </BreadcrumbItem>
