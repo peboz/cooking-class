@@ -14,7 +14,7 @@ import {
   AnimatedViewSection,
 } from "@/components/animated-sections";
 import { prisma } from "@/prisma";
-import { formatCourseForLanding, ensureMinimumCourses } from "@/lib/course-helpers";
+import { formatCourseForLanding, ensureMinimumCourses, formatInstructorForLanding } from "@/lib/course-helpers";
 
 // Revalidate page every 5 minutes
 export const revalidate = 300;
@@ -64,21 +64,34 @@ async function getLandingPageCourses() {
   return courses.map((course) => formatCourseForLanding(course as any));
 }
 
-// Instructors data
-const instructors = [
-  { name: "Marija Kovačević", specialty: "Talijanska kuhinja", image: "MK" },
-  { name: "Ivan Horvat", specialty: "Francuska patisserie", image: "IH" },
-  { name: "Ana Novak", specialty: "Japanska kuhinja", image: "AN" },
-  { name: "Petra Jurić", specialty: "Veganska kuhinja", image: "PJ" },
-  { name: "Luka Marić", specialty: "Mediteranska", image: "LM" },
-  { name: "Nina Tomić", specialty: "Slastičarstvo", image: "NT" },
-  { name: "Mateo Horvat", specialty: "Grill majstor", image: "MH" },
-  { name: "Sara Perić", specialty: "Zdrava prehrana", image: "SP" },
-];
+// Fetch instructors from database
+async function getLandingPageInstructors() {
+  const instructors = await prisma.user.findMany({
+    where: {
+      role: "INSTRUCTOR",
+      isActive: true,
+      instructorProfile: {
+        verified: true,
+      },
+    },
+    include: {
+      instructorProfile: {
+        select: {
+          specializations: true,
+        },
+      },
+    },
+    take: 8,
+    orderBy: { createdAt: "desc" },
+  });
+
+  return instructors.map(formatInstructorForLanding);
+}
 
 export default async function Home() {
-  // Fetch courses from database
+  // Fetch courses and instructors from database
   const allCourses = await getLandingPageCourses();
+  const instructors = await getLandingPageInstructors();
   
   // Split into two sets and ensure minimum 5 courses per slider
   const coursesSet1 = ensureMinimumCourses(allCourses.slice(0, 5), 5);

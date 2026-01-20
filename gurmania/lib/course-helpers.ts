@@ -1,5 +1,5 @@
 /**
- * Helper functions for course data transformation
+ * Helper functions for course and instructor data transformation
  */
 
 import { Difficulty } from "@/app/generated/prisma/client";
@@ -11,6 +11,13 @@ export interface LandingPageCourse {
   level: string;
   duration: string;
   rating: string;
+  image: string;
+}
+
+export interface LandingPageInstructor {
+  id: string;
+  name: string;
+  specialty: string;
   image: string;
 }
 
@@ -121,4 +128,45 @@ export function ensureMinimumCourses(
   }
 
   return result;
+}
+
+/**
+ * Type for User with InstructorProfile relation
+ */
+type InstructorWithProfile = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  instructorProfile: {
+    specializations: string[];
+  } | null;
+};
+
+/**
+ * Formats a database user (instructor) for display on the landing page
+ */
+export function formatInstructorForLanding(
+  instructor: InstructorWithProfile
+): LandingPageInstructor {
+  // Get instructor name with fallback
+  const name = instructor.name || "Nepoznati instruktor";
+
+  // Get first specialization or default
+  const specialty =
+    instructor.instructorProfile?.specializations?.[0] || "Kuharska umjetnost";
+
+  // Generate initials from name for avatar fallback
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return {
+    id: instructor.id,
+    name,
+    specialty,
+    image: initials,
+  };
 }
