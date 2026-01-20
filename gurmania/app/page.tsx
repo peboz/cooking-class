@@ -61,7 +61,7 @@ async function getLandingPageCourses() {
     orderBy: { createdAt: "desc" },
   });
 
-  return courses.map((course) => formatCourseForLanding(course as any));
+  return courses.map((course) => formatCourseForLanding(course));
 }
 
 // Fetch instructors from database
