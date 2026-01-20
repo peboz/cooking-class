@@ -6,12 +6,14 @@ declare module "next-auth" {
       id: string
       role?: string
       isActive?: boolean
+      twoFactorEnabled?: boolean
     } & DefaultSession["user"]
   }
 
   interface User {
     role?: string
     isActive?: boolean
+    twoFactorEnabled?: boolean
   }
 }
 
