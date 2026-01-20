@@ -132,6 +132,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Link the lesson to the shopping list (many-to-many relation)
+    await prisma.shoppingList.update({
+      where: { id: shoppingList.id },
+      data: {
+        lessons: {
+          connect: { id: lessonId },
+        },
+      },
+    });
+
     // Fetch updated shopping list
     const updatedShoppingList = await prisma.shoppingList.findUnique({
       where: { id: shoppingList.id },
@@ -183,6 +193,24 @@ export async function GET(request: NextRequest) {
             ingredient: true,
           },
         },
+        lessons: {
+          include: {
+            ingredients: {
+              include: {
+                ingredient: true,
+              },
+            },
+            module: {
+              include: {
+                course: {
+                  select: {
+                    title: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -202,6 +230,17 @@ export async function GET(request: NextRequest) {
           ingredient: {
             name: item.ingredient.name,
           },
+        })),
+        lessons: list.lessons.map(lesson => ({
+          id: lesson.id,
+          title: lesson.title,
+          courseTitle: lesson.module.course.title,
+          ingredients: lesson.ingredients.map(li => ({
+            ingredientId: li.ingredientId,
+            name: li.ingredient.name,
+            quantity: li.quantity,
+            unit: li.unit,
+          })),
         })),
         createdAt: list.createdAt,
         totalItems: list.items.length,
