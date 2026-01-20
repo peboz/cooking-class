@@ -16,6 +16,9 @@ import {
 import { prisma } from "@/prisma";
 import { formatCourseForLanding, ensureMinimumCourses, formatInstructorForLanding } from "@/lib/course-helpers";
 
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 // Revalidate page every 5 minutes
 export const revalidate = 300;
 
