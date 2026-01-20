@@ -23,14 +23,14 @@ function SetPasswordContent() {
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Invalid link</CardTitle>
+            <CardTitle className="text-2xl font-bold">Neispravan link</CardTitle>
             <CardDescription>
-              This password setup link is invalid or has expired
+              Link za postavljanje lozinke je neispravan ili je istekao
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full" variant="outline">
-              <Link href="/app">Go to dashboard</Link>
+              <Link href="/app">Idi na aplikaciju</Link>
             </Button>
           </CardContent>
         </Card>
@@ -44,13 +44,13 @@ function SetPasswordContent() {
     setLoading(true)
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
+      setError("Lozinke se ne podudaraju")
       setLoading(false)
       return
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters long")
+      setError("Lozinka mora imati najmanje 8 znakova")
       setLoading(false)
       return
     }
@@ -73,7 +73,7 @@ function SetPasswordContent() {
         }, 2000)
       }
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      setError("Došlo je do greške. Molimo pokušajte ponovno.")
     } finally {
       setLoading(false)
     }
@@ -84,17 +84,17 @@ function SetPasswordContent() {
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Password set!</CardTitle>
+            <CardTitle className="text-2xl font-bold">Lozinka je postavljena!</CardTitle>
             <CardDescription>
-              Your password has been successfully set
+              Lozinka je uspješno postavljena
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
-              You can now use your email and password to sign in. Redirecting...
+              Sada se možete prijaviti e-mailom i lozinkom. Preusmjeravamo...
             </div>
             <Button asChild className="w-full">
-              <Link href="/app">Continue to dashboard</Link>
+              <Link href="/app">Nastavi na aplikaciju</Link>
             </Button>
           </CardContent>
         </Card>
@@ -106,15 +106,15 @@ function SetPasswordContent() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Set up your password</CardTitle>
+          <CardTitle className="text-2xl font-bold">Postavite lozinku</CardTitle>
           <CardDescription>
-            Create a password to sign in with email and password
+            Postavite lozinku za prijavu e-mailom i lozinkom
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Lozinka</Label>
               <Input
                 id="password"
                 type="password"
@@ -125,7 +125,7 @@ function SetPasswordContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Label htmlFor="confirmPassword">Potvrdi lozinku</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -143,13 +143,13 @@ function SetPasswordContent() {
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Setting password..." : "Set password"}
+              {loading ? "Postavljanje..." : "Postavi lozinku"}
             </Button>
           </form>
 
           <div className="text-center text-sm">
             <Link href="/app" className="text-muted-foreground hover:text-primary">
-              Skip for now
+              Preskoči za sada
             </Link>
           </div>
         </CardContent>
@@ -164,8 +164,8 @@ export default function SetPasswordPage() {
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Set your password</CardTitle>
-            <CardDescription>Loading...</CardDescription>
+            <CardTitle className="text-2xl font-bold">Postavite lozinku</CardTitle>
+            <CardDescription>Učitavanje...</CardDescription>
           </CardHeader>
         </Card>
       </div>

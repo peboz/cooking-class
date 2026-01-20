@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
+import QRCode from "qrcode"
 import { useRouter } from "next/navigation"
-import { User, ChefHat, AlertCircle, Database, Download, Trash2 } from "lucide-react"
+import { User, ChefHat, AlertCircle, Database, Download, Trash2, ShieldCheck, KeyRound, Clipboard } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -40,6 +41,7 @@ const data = {
   nav: [
     { name: "Profil", icon: User },
     { name: "Personalizacija", icon: ChefHat },
+    { name: "Sigurnost", icon: ShieldCheck },
     { name: "Postani instruktor", icon: ChefHat },
     { name: "Moji podaci", icon: Database },
   ],
@@ -91,13 +93,56 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
   const [deleteConfirmation, setDeleteConfirmation] = React.useState("")
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
 
+  // Two-factor auth state
+  const [twoFactorStatus, setTwoFactorStatus] = React.useState({
+    enabled: false,
+    hasSecret: false,
+    hasPassword: true,
+    backupCodesRemaining: 0,
+  })
+  const [twoFactorSetupStarted, setTwoFactorSetupStarted] = React.useState(false)
+  const [twoFactorSecret, setTwoFactorSecret] = React.useState("")
+  const [twoFactorOtpAuthUrl, setTwoFactorOtpAuthUrl] = React.useState("")
+  const [twoFactorCode, setTwoFactorCode] = React.useState("")
+  const [backupCodes, setBackupCodes] = React.useState<string[] | null>(null)
+  const [twoFactorLoading, setTwoFactorLoading] = React.useState(false)
+  const [disablePassword, setDisablePassword] = React.useState("")
+  const [setPasswordEmailSent, setSetPasswordEmailSent] = React.useState(false)
+  const [twoFactorQrCode, setTwoFactorQrCode] = React.useState("")
+
   // Load profile data when dialog opens
   React.useEffect(() => {
     if (open) {
       loadProfileData()
       loadInstructorStatus()
+      loadTwoFactorStatus()
     }
   }, [open])
+
+  React.useEffect(() => {
+    if (!twoFactorOtpAuthUrl) {
+      setTwoFactorQrCode("")
+      return
+    }
+
+    let isActive = true
+
+    QRCode.toDataURL(twoFactorOtpAuthUrl, { margin: 1, width: 180 })
+      .then((dataUrl: string) => {
+        if (isActive) {
+          setTwoFactorQrCode(dataUrl)
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setTwoFactorQrCode("")
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [twoFactorOtpAuthUrl])
 
   const loadProfileData = async () => {
     try {
@@ -131,6 +176,166 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
     } catch {
       console.error("Error loading instructor status")
       setInstructorStatus({ exists: false })
+    }
+  }
+
+  const loadTwoFactorStatus = async () => {
+    try {
+      const response = await fetch("/api/profile/2fa/status")
+      if (response.ok) {
+        const data = await response.json()
+        setTwoFactorStatus({
+          enabled: data.enabled,
+          hasSecret: data.hasSecret,
+          hasPassword: data.hasPassword,
+          backupCodesRemaining: data.backupCodesRemaining,
+        })
+      }
+    } catch {
+      console.error("Error loading 2FA status")
+    }
+  }
+
+  const handleStartTwoFactorSetup = async () => {
+    setTwoFactorLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const response = await fetch("/api/profile/2fa/setup", { method: "POST" })
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Došlo je do greške")
+        return
+      }
+
+      setTwoFactorSecret(data.secret)
+      setTwoFactorOtpAuthUrl(data.otpauthUrl)
+      setTwoFactorSetupStarted(true)
+      setTwoFactorStatus((prev) => ({ ...prev, hasSecret: true }))
+      setBackupCodes(null)
+      setSuccess("Unesite kod iz aplikacije za autentifikaciju.")
+    } catch {
+      setError("Došlo je do greške. Molimo pokušajte ponovno.")
+    } finally {
+      setTwoFactorLoading(false)
+    }
+  }
+
+  const handleVerifyTwoFactor = async () => {
+    if (!twoFactorCode.trim()) {
+      setError("Unesite 6-znamenkasti kod.")
+      return
+    }
+
+    setTwoFactorLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const response = await fetch("/api/profile/2fa/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: twoFactorCode }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Došlo je do greške")
+        return
+      }
+
+      setBackupCodes(data.backupCodes || [])
+      setTwoFactorStatus((prev) => ({
+        ...prev,
+        enabled: true,
+        hasSecret: true,
+        backupCodesRemaining: data.backupCodes?.length || 0,
+      }))
+      setTwoFactorSetupStarted(false)
+      setTwoFactorCode("")
+      setSuccess("2FA je omogućena. Spremite pričuvne kodove.")
+    } catch {
+      setError("Došlo je do greške. Molimo pokušajte ponovno.")
+    } finally {
+      setTwoFactorLoading(false)
+    }
+  }
+
+  const handleDisableTwoFactor = async () => {
+    if (!disablePassword.trim()) {
+      setError("Unesite lozinku za potvrdu.")
+      return
+    }
+
+    setTwoFactorLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const response = await fetch("/api/profile/2fa/disable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: disablePassword }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Došlo je do greške")
+        return
+      }
+
+      setTwoFactorStatus((prev) => ({
+        ...prev,
+        enabled: false,
+        hasSecret: false,
+        backupCodesRemaining: 0,
+      }))
+      setTwoFactorSecret("")
+      setTwoFactorOtpAuthUrl("")
+      setBackupCodes(null)
+      setDisablePassword("")
+      setSuccess("2FA je isključena.")
+    } catch {
+      setError("Došlo je do greške. Molimo pokušajte ponovno.")
+    } finally {
+      setTwoFactorLoading(false)
+    }
+  }
+
+  const handleRequestSetPassword = async () => {
+    setTwoFactorLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const response = await fetch("/api/profile/request-set-password", { method: "POST" })
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Došlo je do greške")
+        return
+      }
+
+      setSetPasswordEmailSent(true)
+      setSuccess("Poslali smo vam link za postavljanje lozinke.")
+    } catch {
+      setError("Došlo je do greške. Molimo pokušajte ponovno.")
+    } finally {
+      setTwoFactorLoading(false)
+    }
+  }
+
+  const handleCopy = async (value: string, message: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setSuccess(message)
+      setTimeout(() => setSuccess(""), 2500)
+    } catch {
+      setError("Kopiranje nije uspjelo. Molimo pokušajte ponovno.")
     }
   }
 
@@ -863,6 +1068,208 @@ export function ProfileSettingsDialog({ open, onOpenChange, user }: ProfileSetti
                         <ChefHat className="w-4 h-4" />
                         {loading ? "Slanje..." : "Pošalji zahtjev"}
                       </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Security Tab */}
+              {activeTab === "Sigurnost" && (
+                <div className="max-w-2xl space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Sigurnost</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Upravljajte dvofaktorskom autentikacijom i sigurnošću prijave.
+                    </p>
+                  </div>
+
+                  <div className="border rounded-lg p-6 space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                        <ShieldCheck className="w-6 h-6 text-orange-600" />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h3 className="text-lg font-semibold">Dvofaktorska autentikacija (2FA)</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Dodajte dodatni sloj sigurnosti uz autentifikatorsku aplikaciju (Google Authenticator, Authy, Microsoft Authenticator i sl.).
+                        </p>
+                        {twoFactorStatus.enabled ? (
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className="text-green-600 font-medium">✓ 2FA je uključena</span>
+                            <span className="text-muted-foreground">Preostalo pričuvnih kodova: {twoFactorStatus.backupCodesRemaining}</span>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">2FA je trenutno isključena.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {!twoFactorStatus.enabled && !twoFactorSetupStarted && (
+                      <div className="space-y-3">
+                        {!twoFactorStatus.hasPassword && (
+                          <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800 space-y-2">
+                            <p>
+                              Za uključivanje i isključivanje 2FA potrebna je lozinka. Pošaljite si link za postavljanje lozinke.
+                            </p>
+                            <Button
+                              variant="outline"
+                              onClick={handleRequestSetPassword}
+                              disabled={twoFactorLoading || setPasswordEmailSent}
+                            >
+                              {setPasswordEmailSent ? "Link je poslan" : "Pošalji link za lozinku"}
+                            </Button>
+                          </div>
+                        )}
+                        <Button
+                          onClick={handleStartTwoFactorSetup}
+                          disabled={twoFactorLoading || !twoFactorStatus.hasPassword}
+                          className="bg-orange-600 hover:bg-orange-700"
+                        >
+                          {twoFactorLoading ? "Pokretanje..." : "Uključi 2FA"}
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                          Pri uključivanju 2FA automatski dobivate pričuvne kodove (obavezno ih spremite).
+                        </p>
+                      </div>
+                    )}
+
+                    {twoFactorSetupStarted && (
+                      <div className="space-y-4">
+                        <div className="rounded-lg border p-4 space-y-2">
+                          <p className="text-sm font-medium">Korak 1: Dodajte račun u aplikaciji</p>
+                          <p className="text-sm text-muted-foreground">
+                            U aplikaciji odaberite ručni unos i unesite ključ ispod.
+                          </p>
+                          {twoFactorQrCode && (
+                            <div className="flex items-center justify-center rounded-md border bg-white p-3">
+                              <img
+                                src={twoFactorQrCode}
+                                alt="QR kod za 2FA"
+                                className="h-40 w-40"
+                              />
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Input value={twoFactorSecret} readOnly className="font-mono" />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleCopy(twoFactorSecret, "Ključ je kopiran.")}
+                            >
+                              <Clipboard className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          {twoFactorOtpAuthUrl && (
+                            <Button
+                              variant="ghost"
+                              className="px-0 text-orange-600"
+                              onClick={() => handleCopy(twoFactorOtpAuthUrl, "URI je kopiran.")}
+                            >
+                              Kopiraj otpauth URI
+                            </Button>
+                          )}
+                        </div>
+
+                        <div className="rounded-lg border p-4 space-y-3">
+                          <p className="text-sm font-medium">Korak 2: Potvrdite kod</p>
+                          <div className="space-y-2">
+                            <Label htmlFor="two-factor-code">6-znamenkasti kod</Label>
+                            <Input
+                              id="two-factor-code"
+                              inputMode="numeric"
+                              placeholder="123456"
+                              value={twoFactorCode}
+                              onChange={(e) => setTwoFactorCode(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              onClick={handleVerifyTwoFactor}
+                              disabled={twoFactorLoading}
+                              className="bg-orange-600 hover:bg-orange-700"
+                            >
+                              {twoFactorLoading ? "Provjera..." : "Potvrdi 2FA"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setTwoFactorSetupStarted(false)
+                                setTwoFactorSecret("")
+                                setTwoFactorOtpAuthUrl("")
+                                setTwoFactorCode("")
+                              }}
+                            >
+                              Odustani
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {backupCodes && backupCodes.length > 0 && (
+                      <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <KeyRound className="w-4 h-4 text-orange-600" />
+                          <p className="text-sm font-semibold">Pričuvni kodovi (obavezno spremite)</p>
+                        </div>
+                        <p className="text-xs text-orange-700">
+                          Ovi kodovi se prikazuju samo jednom. Spremite ih na sigurno mjesto.
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-2 font-mono text-sm">
+                          {backupCodes.map((code) => (
+                            <div key={code} className="rounded border border-orange-200 bg-white px-3 py-2">
+                              {code}
+                            </div>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleCopy(backupCodes.join("\n"), "Pričuvni kodovi su kopirani.")}
+                        >
+                          Kopiraj sve kodove
+                        </Button>
+                      </div>
+                    )}
+
+                    {twoFactorStatus.enabled && (
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-4 space-y-3">
+                        <h4 className="text-sm font-semibold text-red-700">Isključi 2FA</h4>
+                        <p className="text-sm text-red-700">
+                          Za isključivanje 2FA morate ponovno unijeti lozinku.
+                        </p>
+                        <div className="space-y-2">
+                          <Label htmlFor="disable-2fa-password">Lozinka</Label>
+                          <Input
+                            id="disable-2fa-password"
+                            type="password"
+                            value={disablePassword}
+                            onChange={(e) => setDisablePassword(e.target.value)}
+                          />
+                        </div>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDisableTwoFactor}
+                          disabled={twoFactorLoading}
+                        >
+                          {twoFactorLoading ? "Isključivanje..." : "Isključi 2FA"}
+                        </Button>
+                        <p className="text-xs text-red-600">
+                          Isključivanjem 2FA brišu se svi pričuvni kodovi i zapamćeni uređaji.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Error/Success Messages */}
+                  {error && (
+                    <div className="flex items-center gap-2 p-3 bg-destructive/15 text-destructive rounded-md text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      {error}
+                    </div>
+                  )}
+                  {success && (
+                    <div className="p-3 bg-green-50 border border-green-200 text-green-800 rounded-md text-sm">
+                      {success}
                     </div>
                   )}
                 </div>

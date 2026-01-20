@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     if (!token || !password) {
       return NextResponse.json(
-        { error: 'Token and password are required' },
+        { error: 'Token i lozinka su obavezni' },
         { status: 400 }
       );
     }
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'Korisnik nije pronađen' },
         { status: 404 }
       );
     }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // Check if user already has a password
     if (user.password) {
       return NextResponse.json(
-        { error: 'Password already set. Use password reset instead.' },
+        { error: 'Lozinka je već postavljena. Koristite reset lozinke.' },
         { status: 400 }
       );
     }
@@ -59,13 +59,13 @@ export async function POST(request: NextRequest) {
     await deletePasswordResetToken(token);
 
     return NextResponse.json(
-      { message: 'Password set successfully' },
+      { message: 'Lozinka je uspješno postavljena' },
       { status: 200 }
     );
   } catch (error) {
     console.error('Set password error:', error);
     return NextResponse.json(
-      { error: 'An error occurred while setting password' },
+      { error: 'Došlo je do greške prilikom postavljanja lozinke' },
       { status: 500 }
     );
   }
