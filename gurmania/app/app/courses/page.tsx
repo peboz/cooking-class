@@ -6,15 +6,16 @@ import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { CourseCard } from '@/components/course-card';
-import { Input } from '@/components/ui/input';
+import { InstructorCard } from '@/components/instructor-card';
+import { SearchAutocomplete } from '@/components/search-autocomplete';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, X } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { DIFFICULTY_LEVELS } from '@/lib/constants';
+import { DIFFICULTY_LEVELS, CUISINE_TYPES, ALLERGENS } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,26 +30,41 @@ interface Course {
   image: string;
 }
 
+interface Instructor {
+  id: string;
+  name: string | null;
+  image: string | null;
+  verified: boolean;
+}
+
 function CourseBrowseContent() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   
   const [courses, setCourses] = useState<Course[]>([]);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [instructorsLoading, setInstructorsLoading] = useState(false);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'newest');
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
-  const [cuisineType, setCuisineType] = useState('');
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
   const [isInstructor, setIsInstructor] = useState(false);
   const limit = 20;
 
   useEffect(() => {
     fetchCourses();
+    if (search) {
+      fetchInstructors();
+    } else {
+      setInstructors([]);
+    }
     fetchUserProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, sortBy, selectedDifficulties, cuisineType, offset]);
+  }, [search, sortBy, selectedDifficulties, selectedCuisines, selectedAllergens, offset]);
 
   const fetchUserProfile = async () => {
     try {
@@ -70,9 +86,14 @@ function CourseBrowseContent() {
       if (search) params.append('search', search);
       if (sortBy) params.append('sortBy', sortBy);
       if (selectedDifficulties.length > 0) {
-        params.append('difficulty', selectedDifficulties[0]); // API supports single difficulty
+        params.append('difficulties', selectedDifficulties.join(','));
       }
-      if (cuisineType) params.append('cuisineType', cuisineType);
+      if (selectedCuisines.length > 0) {
+        params.append('cuisineTypes', selectedCuisines.join(','));
+      }
+      if (selectedAllergens.length > 0) {
+        params.append('allergens', selectedAllergens.join(','));
+      }
       params.append('limit', limit.toString());
       params.append('offset', offset.toString());
 
@@ -116,10 +137,40 @@ function CourseBrowseContent() {
     }
   };
 
+  const fetchInstructors = async () => {
+    if (!search) {
+      setInstructors([]);
+      return;
+    }
+
+    try {
+      setInstructorsLoading(true);
+      const params = new URLSearchParams();
+      params.append('search', search);
+
+      const response = await fetch(`/api/instructors?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch instructors');
+      }
+
+      const data = await response.json();
+      setInstructors(data.instructors || []);
+    } catch (error) {
+      console.error('Error fetching instructors:', error);
+      setInstructors([]);
+    } finally {
+      setInstructorsLoading(false);
+    }
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setOffset(0);
     fetchCourses();
+    if (search) {
+      fetchInstructors();
+    }
   };
 
   const handleDifficultyToggle = (difficulty: string) => {
@@ -131,15 +182,34 @@ function CourseBrowseContent() {
     setOffset(0);
   };
 
+  const handleCuisineToggle = (cuisine: string) => {
+    setSelectedCuisines(prev => 
+      prev.includes(cuisine) 
+        ? prev.filter(c => c !== cuisine)
+        : [...prev, cuisine]
+    );
+    setOffset(0);
+  };
+
+  const handleAllergenToggle = (allergen: string) => {
+    setSelectedAllergens(prev => 
+      prev.includes(allergen) 
+        ? prev.filter(a => a !== allergen)
+        : [...prev, allergen]
+    );
+    setOffset(0);
+  };
+
   const clearFilters = () => {
     setSearch('');
     setSelectedDifficulties([]);
-    setCuisineType('');
+    setSelectedCuisines([]);
+    setSelectedAllergens([]);
     setSortBy('newest');
     setOffset(0);
   };
 
-  const hasFilters = search || selectedDifficulties.length > 0 || cuisineType;
+  const hasFilters = search || selectedDifficulties.length > 0 || selectedCuisines.length > 0 || selectedAllergens.length > 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -154,20 +224,13 @@ function CourseBrowseContent() {
         {/* Search and filters */}
         <div className="mb-8 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search bar */}
-            <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Pretražite tečajeve..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button type="submit">Pretraži</Button>
-            </form>
+            {/* Search bar with autocomplete */}
+            <SearchAutocomplete
+              value={search}
+              onChange={setSearch}
+              onSubmit={handleSearchSubmit}
+              className="flex-1"
+            />
 
             {/* Sort dropdown */}
             <Select value={sortBy} onValueChange={(value) => { setSortBy(value); setOffset(0); }}>
@@ -197,8 +260,10 @@ function CourseBrowseContent() {
                   <FilterSection 
                     selectedDifficulties={selectedDifficulties}
                     onDifficultyToggle={handleDifficultyToggle}
-                    cuisineType={cuisineType}
-                    onCuisineTypeChange={setCuisineType}
+                    selectedCuisines={selectedCuisines}
+                    onCuisineToggle={handleCuisineToggle}
+                    selectedAllergens={selectedAllergens}
+                    onAllergenToggle={handleAllergenToggle}
                   />
                 </div>
               </SheetContent>
@@ -221,12 +286,18 @@ function CourseBrowseContent() {
                   <X className="h-3 w-3 ml-1" />
                 </Button>
               ))}
-              {cuisineType && (
-                <Button variant="secondary" size="sm" onClick={() => setCuisineType('')}>
-                  {cuisineType}
+              {selectedCuisines.map(cuisine => (
+                <Button key={cuisine} variant="secondary" size="sm" onClick={() => handleCuisineToggle(cuisine)}>
+                  {cuisine}
                   <X className="h-3 w-3 ml-1" />
                 </Button>
-              )}
+              ))}
+              {selectedAllergens.map(allergen => (
+                <Button key={allergen} variant="secondary" size="sm" onClick={() => handleAllergenToggle(allergen)}>
+                  Bez: {allergen}
+                  <X className="h-3 w-3 ml-1" />
+                </Button>
+              ))}
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 Očisti sve
               </Button>
@@ -241,8 +312,10 @@ function CourseBrowseContent() {
               <FilterSection 
                 selectedDifficulties={selectedDifficulties}
                 onDifficultyToggle={handleDifficultyToggle}
-                cuisineType={cuisineType}
-                onCuisineTypeChange={setCuisineType}
+                selectedCuisines={selectedCuisines}
+                onCuisineToggle={handleCuisineToggle}
+                selectedAllergens={selectedAllergens}
+                onAllergenToggle={handleAllergenToggle}
               />
             </div>
           </aside>
@@ -302,6 +375,39 @@ function CourseBrowseContent() {
                 </Button>
               </div>
             )}
+
+            {/* Instructor results section */}
+            {search && instructors.length > 0 && (
+              <div className="mt-12">
+                <h2 className="text-2xl font-bold mb-4">Instruktori</h2>
+                {instructorsLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-20 w-full rounded-lg" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4 text-sm text-muted-foreground">
+                      Pronađeno {instructors.length} {instructors.length === 1 ? 'instruktor' : 'instruktora'}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {instructors.map((instructor) => (
+                        <InstructorCard
+                          key={instructor.id}
+                          id={instructor.id}
+                          name={instructor.name}
+                          image={instructor.image}
+                          verified={instructor.verified}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -314,15 +420,19 @@ function CourseBrowseContent() {
 interface FilterSectionProps {
   selectedDifficulties: string[];
   onDifficultyToggle: (difficulty: string) => void;
-  cuisineType: string;
-  onCuisineTypeChange: (value: string) => void;
+  selectedCuisines: string[];
+  onCuisineToggle: (cuisine: string) => void;
+  selectedAllergens: string[];
+  onAllergenToggle: (allergen: string) => void;
 }
 
 function FilterSection({ 
   selectedDifficulties, 
   onDifficultyToggle, 
-  cuisineType, 
-  onCuisineTypeChange 
+  selectedCuisines,
+  onCuisineToggle,
+  selectedAllergens,
+  onAllergenToggle
 }: FilterSectionProps) {
   return (
     <>
@@ -348,12 +458,39 @@ function FilterSection({
       {/* Cuisine type filter */}
       <div>
         <h3 className="font-semibold mb-3">Vrsta kuhinje</h3>
-        <Input
-          type="text"
-          placeholder="npr. Talijanska"
-          value={cuisineType}
-          onChange={(e) => onCuisineTypeChange(e.target.value)}
-        />
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+          {CUISINE_TYPES.map(cuisine => (
+            <div key={cuisine} className="flex items-center space-x-2">
+              <Checkbox
+                id={`cuisine-${cuisine}`}
+                checked={selectedCuisines.includes(cuisine)}
+                onCheckedChange={() => onCuisineToggle(cuisine)}
+              />
+              <Label htmlFor={`cuisine-${cuisine}`} className="cursor-pointer">
+                {cuisine}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Allergen filter */}
+      <div>
+        <h3 className="font-semibold mb-3">Bez alergena</h3>
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+          {ALLERGENS.map(allergen => (
+            <div key={allergen} className="flex items-center space-x-2">
+              <Checkbox
+                id={`allergen-${allergen}`}
+                checked={selectedAllergens.includes(allergen)}
+                onCheckedChange={() => onAllergenToggle(allergen)}
+              />
+              <Label htmlFor={`allergen-${allergen}`} className="cursor-pointer">
+                {allergen}
+              </Label>
+            </div>
+          ))}
+        </div>
       </div>
     </>
   );
