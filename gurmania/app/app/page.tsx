@@ -159,7 +159,7 @@ export default async function AppPage() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900 overflow-hidden">
       {/* Navigation */}
-      <Navbar user={session.user} isInstructor={isInstructor} />
+      <Navbar user={session.user} isInstructor={isInstructor} isAdmin={session.user.role === 'ADMIN'} />
     
       <main className="flex-1 p-6 overflow-auto">
         {/* Section: Moglo bi Vam se svidjeti... */}
