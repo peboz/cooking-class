@@ -49,23 +49,7 @@ export default function InstructorProfilePage() {
   const [data, setData] = useState<InstructorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isInstructor, setIsInstructor] = useState(false);
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch('/api/profile');
-        if (response.ok) {
-          const data = await response.json();
-          setIsInstructor(data.role === 'INSTRUCTOR' || data.role === 'ADMIN' || data.instructorProfile?.verified);
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
+  const isInstructor = session?.user?.role === 'INSTRUCTOR' || session?.user?.role === 'ADMIN';
 
   useEffect(() => {
     const fetchInstructorProfile = async () => {

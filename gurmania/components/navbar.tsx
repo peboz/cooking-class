@@ -29,7 +29,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ProfileSettingsDialog } from "@/components/profile-settings-dialog"
-import { Search, Settings, LogOut, ChefHat, ShoppingCart, Trash2, Shield } from "lucide-react"
+import { Search, Settings, LogOut, ChefHat, ShoppingCart, Trash2, Shield, Menu } from "lucide-react"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 
@@ -161,6 +161,27 @@ export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
     <>
       <nav className="border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex h-16 items-center px-4 container mx-auto">
+          {/* Mobile Navigation Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden mr-2">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuItem asChild>
+                <Link href="/app/courses" className="cursor-pointer">
+                  Pregledaj tečajeve
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/app/workshops" className="cursor-pointer">
+                  Live radionice
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Left - Logo/Brand */}
           <Link href="/app" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <ChefHat className="w-8 h-8 text-orange-600" />
@@ -220,12 +241,6 @@ export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/app">
-                    <ChefHat className="mr-2 h-4 w-4" />
-                    <span>Moji tečajevi</span>
-                  </Link>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Postavke profila</span>
