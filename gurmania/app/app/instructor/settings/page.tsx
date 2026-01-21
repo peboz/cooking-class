@@ -5,13 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, AlertCircle, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { SPECIALIZATIONS } from '@/lib/constants';
+import { CUISINE_TYPES } from '@/lib/constants';
 
 interface InstructorProfile {
   id: string;
@@ -172,40 +171,25 @@ export default function InstructorSettingsPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {SPECIALIZATIONS.map((spec) => (
-                <div key={spec} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={spec}
-                    checked={specializations.includes(spec)}
-                    onCheckedChange={() => toggleSpecialization(spec)}
-                  />
-                  <label
-                    htmlFor={spec}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    {spec}
-                  </label>
-                </div>
+            <div className="flex flex-wrap gap-2">
+              {CUISINE_TYPES.map((cuisine) => (
+                <Badge
+                  key={cuisine}
+                  variant={specializations.includes(cuisine) ? "default" : "outline"}
+                  className={`cursor-pointer text-sm ${
+                    specializations.includes(cuisine)
+                      ? "bg-orange-600 hover:bg-orange-700"
+                      : "hover:border-orange-300"
+                  }`}
+                  onClick={() => toggleSpecialization(cuisine)}
+                >
+                  {cuisine}
+                </Badge>
               ))}
             </div>
 
-            {/* Selected specializations badges */}
-            {specializations.length > 0 && (
-              <div className="pt-2">
-                <p className="text-sm font-medium mb-2">Odabrane specijalizacije:</p>
-                <div className="flex flex-wrap gap-2">
-                  {specializations.map((spec) => (
-                    <Badge key={spec} variant="secondary">
-                      {spec}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {specializations.length === 0 && (
-              <p className="text-sm text-destructive">
+              <p className="text-sm text-destructive mt-2">
                 Potrebna je barem jedna specijalizacija
               </p>
             )}

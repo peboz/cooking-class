@@ -55,7 +55,7 @@ export default async function InstructorDashboard() {
       },
       select: {
         id: true,
-        updatedAt: true,
+        lastAccessedAt: true,
         user: {
           select: {
             name: true,
@@ -68,9 +68,10 @@ export default async function InstructorDashboard() {
         },
       },
       orderBy: {
-        updatedAt: 'desc',
+        id: 'desc',
       },
       take: 10,
+      distinct: ['userId', 'courseId'],
     }),
     // Recent reviews
     prisma.review.findMany({
@@ -124,7 +125,7 @@ export default async function InstructorDashboard() {
       type: 'enrollment' as const,
       userName: enrollment.user?.name ?? 'Nepoznat korisnik',
       courseTitle: enrollment.course?.title ?? 'Nepoznat tečaj',
-      timestamp: enrollment.updatedAt,
+      timestamp: enrollment.lastAccessedAt,
     })),
     ...recentReviews.map((review) => ({
       id: `review-${review.id}`,
