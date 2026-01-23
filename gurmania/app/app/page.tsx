@@ -8,7 +8,7 @@ import { prisma } from "@/prisma"
 
 // Helper function to format course data
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatCourse(course: any) {
+function formatCourse(course: any, recommendationReason?: string) {
    
   const lessonCount = course.modules?.reduce(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,6 +52,7 @@ function formatCourse(course: any) {
     rating: avgRating,
     lessonCount,
     image: thumbnail,
+    recommendationReason,
   };
 }
 
@@ -102,23 +103,63 @@ export default async function AppPage() {
     },
   };
 
-  // Fetch recommended courses based on user preferences
+  const favoriteCuisines = user?.studentProfile?.favoriteCuisines || [];
+  const dietaryPreferences = user?.studentProfile?.dietaryPreferences || [];
+  const allergies = user?.studentProfile?.allergies || [];
+
+  const progressCourseIds = await prisma.progress.findMany({
+    where: {
+      userId: session.user.id,
+      courseId: {
+        not: null,
+      },
+    },
+    select: {
+      courseId: true,
+    },
+  });
+
+  const startedCourseIds = progressCourseIds
+    .map((p) => p.courseId)
+    .filter((id): id is string => Boolean(id));
+
+  const hasPreferenceSignals = favoriteCuisines.length > 0 || dietaryPreferences.length > 0;
+  const hasProgressSignals = startedCourseIds.length > 0;
+  const canPersonalize = hasPreferenceSignals || hasProgressSignals;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recommendedWhere: any = {
+  const recommendationWhere: any = {
     published: true,
+    deletedAt: null,
+    instructorId: {
+      not: session.user.id,
+    },
   };
-  
-  // If user has favorite cuisines, filter by those
-  if (user?.studentProfile?.favoriteCuisines && user.studentProfile.favoriteCuisines.length > 0) {
-    recommendedWhere.cuisineType = {
-      in: user.studentProfile.favoriteCuisines,
+
+  if (startedCourseIds.length > 0) {
+    recommendationWhere.id = {
+      notIn: startedCourseIds,
     };
   }
 
-  const recommendedCourses = await prisma.course.findMany({
-    where: recommendedWhere,
+  if (allergies.length > 0) {
+    recommendationWhere.modules = {
+      every: {
+        lessons: {
+          none: {
+            allergenTags: {
+              hasSome: allergies,
+            },
+          },
+        },
+      },
+    };
+  }
+
+  const recommendationCandidates = await prisma.course.findMany({
+    where: recommendationWhere,
     include: courseInclude,
-    take: 5,
+    take: 50,
     orderBy: {
       createdAt: 'desc',
     },
@@ -128,6 +169,7 @@ export default async function AppPage() {
   const enrolledCourses = await prisma.course.findMany({
     where: {
       published: true,
+      deletedAt: null,
       progress: {
         some: {
           userId: session.user.id,
@@ -143,6 +185,7 @@ export default async function AppPage() {
   const popularCourses = await prisma.course.findMany({
     where: {
       published: true,
+      deletedAt: null,
     },
     include: courseInclude,
     take: 5,
@@ -151,10 +194,79 @@ export default async function AppPage() {
     },
   });
 
+  const difficultyBySkill: Record<string, string> = {
+    BEGINNER: 'EASY',
+    INTERMEDIATE: 'MEDIUM',
+    ADVANCED: 'HARD',
+  };
+
+  const enrolledCuisineTypes = new Set(
+    enrolledCourses.map((course) => course.cuisineType).filter(Boolean)
+  );
+
+  const personalizedRecommendations = canPersonalize
+    ? recommendationCandidates
+        .map((course) => {
+          let score = 0;
+          const reasons: string[] = [];
+
+          if (course.cuisineType && favoriteCuisines.includes(course.cuisineType)) {
+            score += 4;
+            reasons.push(`Omiljena kuhinja: ${course.cuisineType}`);
+          }
+
+          const dietaryMatch = dietaryPreferences.filter((pref) => course.tags?.includes(pref));
+          if (dietaryMatch.length > 0) {
+            score += 3;
+            reasons.push(`Prehrambena preferencija: ${dietaryMatch[0]}`);
+          }
+
+          const expectedDifficulty = user?.studentProfile?.skillLevel
+            ? difficultyBySkill[user.studentProfile.skillLevel]
+            : undefined;
+          if (expectedDifficulty && course.difficulty === expectedDifficulty) {
+            score += 2;
+            reasons.push("Razina tečaja odgovara Vašoj razini znanja");
+          }
+
+          if (course.cuisineType && enrolledCuisineTypes.has(course.cuisineType)) {
+            score += 1;
+            reasons.push("Slično tečajevima koje trenutno učite");
+          }
+
+          if (allergies.length > 0) {
+            score += 1;
+            reasons.push("Bez označenih alergena");
+          }
+
+          return {
+            course,
+            score,
+            reasonText: reasons.slice(0, 2).join(" · ") || "Preporučeno prema Vašem profilu",
+          };
+        })
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+    : [];
+
+  const shouldFallbackToPopular = personalizedRecommendations.length === 0;
+
+  let recommendationNote = "";
+  if (!canPersonalize) {
+    recommendationNote = `Prikazujemo popularne tečajeve${allergies.length > 0 ? " prilagođene Vašim alergenima" : ""}. Dodajte preferencije u profilu ili upišite tečaj kako bismo mogli personalizirati preporuke.`;
+  } else if (shouldFallbackToPopular) {
+    recommendationNote = "Trenutno nemamo dovoljno podataka za precizne preporuke. Ažurirajte preferencije ili dovršite tečaj kako bismo mogli poboljšati preporuke.";
+  } else {
+    recommendationNote = "Preporuke temeljimo na Vašim preferencijama i aktivnosti.";
+  }
+
   // Format courses for display
-  const formattedRecommended = recommendedCourses.map(formatCourse);
-  const formattedEnrolled = enrolledCourses.map(formatCourse);
-  const formattedPopular = popularCourses.map(formatCourse);
+  const formattedRecommended = shouldFallbackToPopular
+    ? popularCourses.map((course) => formatCourse(course))
+    : personalizedRecommendations.map((item) => formatCourse(item.course, item.reasonText));
+  const formattedEnrolled = enrolledCourses.map((course) => formatCourse(course));
+  const formattedPopular = popularCourses.map((course) => formatCourse(course));
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900 overflow-hidden">
@@ -167,6 +279,7 @@ export default async function AppPage() {
           title="Moglo bi Vam se svidjeti..." 
           icon={Sparkles} 
           courses={formattedRecommended.length > 0 ? formattedRecommended : formattedPopular} 
+          note={recommendationNote}
           emptyMessage="Nema dostupnih tečajeva koji odgovaraju Vašim preferencijama"
         />
 
