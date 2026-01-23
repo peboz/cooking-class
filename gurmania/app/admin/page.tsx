@@ -7,6 +7,9 @@ import { Users, GraduationCap, BookOpen, ShieldAlert, RefreshCw } from "lucide-r
 import { prisma } from "@/prisma";
 import { revalidatePath } from "next/cache";
 
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 async function getDashboardStats() {
   const [
     totalUsers,

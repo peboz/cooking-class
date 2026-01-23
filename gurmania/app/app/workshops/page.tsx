@@ -127,7 +127,7 @@ export default function WorkshopsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} />
+      <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} isAdmin={session?.user?.role === 'ADMIN'} />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Live radionice</h1>

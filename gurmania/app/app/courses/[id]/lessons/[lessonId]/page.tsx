@@ -77,7 +77,7 @@ export default function LessonViewerPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isInstructor, setIsInstructor] = useState(false);
+  const isInstructor = session?.user?.role === 'INSTRUCTOR' || session?.user?.role === 'ADMIN';
   const [showLockedDialog, setShowLockedDialog] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -85,21 +85,8 @@ export default function LessonViewerPage() {
 
   useEffect(() => {
     fetchLesson();
-    fetchUserProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setIsInstructor(data.role === 'INSTRUCTOR' || data.role === 'ADMIN' || data.instructorProfile?.verified);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
 
   const fetchLesson = async () => {
     try {
@@ -239,8 +226,8 @@ export default function LessonViewerPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} />
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Skeleton className="h-96 w-full mb-6" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -260,8 +247,8 @@ export default function LessonViewerPage() {
 
   if (error || !lesson) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} />
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Card className="max-w-2xl mx-auto">
             <CardContent className="p-12 text-center space-y-4">
@@ -309,7 +296,7 @@ export default function LessonViewerPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <Navbar user={session?.user} isInstructor={session?.user?.role === "INSTRUCTOR" || session?.user?.role === "ADMIN"} />
+    <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         {/* Breadcrumbs */}
