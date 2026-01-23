@@ -74,6 +74,7 @@ export async function GET(
           },
         },
         reviews: {
+          where: { status: 'APPROVED' },
           select: {
             rating: true,
           },

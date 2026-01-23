@@ -11,6 +11,7 @@ interface Course {
   rating?: number
   lessonCount?: number
   image: string
+  recommendationReason?: string
 }
 
 interface CourseSectionProps {
@@ -19,15 +20,23 @@ interface CourseSectionProps {
   courses: Course[]
   loading?: boolean
   emptyMessage?: string
+  note?: string
 }
 
-export function CourseSection({ title, icon: Icon, courses, loading, emptyMessage }: CourseSectionProps) {
+export function CourseSection({ title, icon: Icon, courses, loading, emptyMessage, note }: CourseSectionProps) {
   return (
     <section className="mb-10">
-      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-        <Icon className="!w-[1.625rem] !h-[1.625rem]" />
-        {title}
-      </h2>
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Icon className="!w-[1.625rem] !h-[1.625rem]" />
+          {title}
+        </h2>
+        {note && (
+          <p className="mt-1 text-sm text-muted-foreground max-w-3xl">
+            {note}
+          </p>
+        )}
+      </div>
       
       {/* Responsive grid: 1-2-3-4-5 columns */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">

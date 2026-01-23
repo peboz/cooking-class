@@ -23,11 +23,7 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-2">
             <h1 className="text-4xl font-bold tracking-tight">Politika privatnosti</h1>
             <p className="text-muted-foreground">
-              Posljednje ažurirano: {new Date().toLocaleDateString("hr-HR", { 
-                year: "numeric", 
-                month: "long", 
-                day: "numeric" 
-              })}
+              Posljednje ažurirano: 20. 1. 2026.
             </p>
           </div>
 
@@ -35,7 +31,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">1. Uvod</h2>
               <p>
-                Dobrodošli na Gurmania platformu. Ova Politika privatnosti objašnjava kako prikupljamo, 
+                Dobro došli na Gurmaniju. Ova Politika privatnosti objašnjava kako prikupljamo, 
                 koristimo, čuvamo i štitimo vaše osobne podatke kada koristite našu platformu za online 
                 tečajeve kuhanja. Pridajemo veliku važnost zaštiti vaše privatnosti i posvećeni smo 
                 transparentnosti u vezi s vašim osobnim podacima.
@@ -169,14 +165,54 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">8. Kolačići (Cookies)</h2>
               <p>
-                Naša platforma koristi kolačiće i slične tehnologije za praćenje aktivnosti i čuvanje 
-                određenih informacija:
+                Naša platforma koristi isključivo nužne i funkcionalne kolačiće potrebne za prijavu,
+                sigurnost i osnovnu funkcionalnost. Trenutno ne koristimo analitičke niti marketinške
+                kolačiće trećih strana.
               </p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Nužni kolačići:</strong> Potrebni za autentifikaciju i osnovnu funkcionalnost platforme</li>
-                <li><strong>Funkcionalni kolačići:</strong> Pamte vaše preferencije (npr. tema, jezik)</li>
-                <li><strong>Analitički kolačići:</strong> Pomažu nam razumjeti kako korisnici koriste platformu</li>
-              </ul>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="py-2 pr-4 text-sm font-semibold">Naziv</th>
+                      <th className="py-2 pr-4 text-sm font-semibold">Svrha</th>
+                      <th className="py-2 pr-4 text-sm font-semibold">Trajanje</th>
+                      <th className="py-2 text-sm font-semibold">Kategorija</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm">
+                    <tr className="border-b">
+                      <td className="py-2 pr-4">authjs.session-token / __Secure-authjs.session-token</td>
+                      <td className="py-2 pr-4">Autentifikacija korisnika i održavanje sesije</td>
+                      <td className="py-2 pr-4">Sesija</td>
+                      <td className="py-2">Nužni</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4">authjs.csrf-token</td>
+                      <td className="py-2 pr-4">Zaštita od CSRF napada pri prijavi i osjetljivim radnjama</td>
+                      <td className="py-2 pr-4">Sesija</td>
+                      <td className="py-2">Nužni</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4">authjs.callback-url</td>
+                      <td className="py-2 pr-4">Povratna URL adresa nakon prijave</td>
+                      <td className="py-2 pr-4">Kratkotrajno</td>
+                      <td className="py-2">Nužni</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4">trusted_device</td>
+                      <td className="py-2 pr-4">Pamti pouzdani uređaj za 2FA</td>
+                      <td className="py-2 pr-4">30 dana</td>
+                      <td className="py-2">Nužni</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">sidebar_state</td>
+                      <td className="py-2 pr-4">Pamti stanje navigacijskog bočnog izbornika</td>
+                      <td className="py-2 pr-4">7 dana</td>
+                      <td className="py-2">Funkcionalni</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               <p className="mt-3">
                 Možete kontrolirati i/ili izbrisati kolačiće po želji. Međutim, to može utjecati na 
                 funkcionalnost platforme. Detalje o upravljanju kolačićima možete pronaći u postavkama 

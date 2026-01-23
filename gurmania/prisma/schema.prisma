@@ -68,6 +68,12 @@ enum CommentStatus {
   REJECTED
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // MODELI KORISNIKA
 
 model User {
@@ -78,6 +84,8 @@ model User {
   image                 String?
   password              String?
   twoFactorEnabled      Boolean   @default(false)
+  twoFactorSecret       String?
+  twoFactorConfirmedAt  DateTime?
   role                  Role      @default(STUDENT)
   isActive              Boolean   @default(true)
   lastLoginAt           DateTime?
@@ -89,6 +97,8 @@ model User {
   sessions      Session[]
   // Optional for WebAuthn support
   authenticators Authenticator[]
+  backupCodes   BackupCode[]
+  trustedDevices TrustedDevice[]
 
   // profili
   studentProfile    StudentProfile?
@@ -232,6 +242,33 @@ model Authenticator {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, credentialID])
+}
+
+model BackupCode {
+  id        String   @id @default(cuid())
+  userId    String
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TrustedDevice {
+  id           String   @id @default(cuid())
+  userId       String
+  deviceIdHash String   @unique
+  userAgent    String?
+  lastUsedAt   DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 
@@ -484,6 +521,7 @@ model Review {
   rating      Int      @db.SmallInt
   comment     String?
   photoUrl    String?
+  status      ReviewStatus @default(PENDING)
   createdAt   DateTime @default(now())
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -493,6 +531,7 @@ model Review {
 
   @@index([targetType])
   @@index([rating])
+  @@index([status])
   @@index([userId])
   @@index([lessonId])
   @@index([courseId])

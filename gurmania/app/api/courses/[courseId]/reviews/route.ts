@@ -37,6 +37,10 @@ export async function GET(
       where: {
         courseId,
         targetType: 'COURSE',
+        OR: [
+          { status: 'APPROVED' },
+          { userId: session.user.id },
+        ],
       },
       include: {
         user: {
@@ -205,6 +209,7 @@ export async function POST(
           rating,
           comment: comment || null,
           ...(photoUrl && { photoUrl }),
+          status: 'PENDING',
         },
         include: {
           user: {
@@ -226,6 +231,7 @@ export async function POST(
           rating,
           comment: comment || null,
           photoUrl,
+          status: 'PENDING',
         },
         include: {
           user: {

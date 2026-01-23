@@ -23,11 +23,7 @@ export default function TermsOfServicePage() {
           <div className="space-y-2">
             <h1 className="text-4xl font-bold tracking-tight">Uvjeti korištenja</h1>
             <p className="text-muted-foreground">
-              Posljednje ažurirano: {new Date().toLocaleDateString("hr-HR", { 
-                year: "numeric", 
-                month: "long", 
-                day: "numeric" 
-              })}
+              Posljednje ažurirano: 20. 1. 2026.
             </p>
           </div>
 
@@ -35,14 +31,14 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">1. Prihvaćanje uvjeta</h2>
               <p>
-                Dobrodošli na Gurmania platformu za online tečajeve kuhanja (&quot;Platforma&quot;, &quot;mi&quot;, &quot;nas&quot;, &quot;naš&quot;). 
-                Korištenjem naše Platforme pristajete biti vezani ovim Uvjetima korištenja (&quot;Uvjeti&quot;). 
+                Dobro došli na Gurmaniju - platformu za online tečajeve kuhanja (&quot;Platforma&quot;, &quot;mi&quot;, &quot;nas&quot;, &quot;naš&quot;). 
+                Korištenjem naše Platforme pristajete na ove Uvjete korištenja (&quot;Uvjeti&quot;). 
                 Molimo vas da pažljivo pročitate ove Uvjete prije korištenja Platforme.
               </p>
               <p className="mt-3">
                 Ako se ne slažete s bilo kojim dijelom ovih Uvjeta, nemate dopuštenje za pristup ili 
                 korištenje Platforme. Registracijom računa ili korištenjem Platforme potvrđujete da ste 
-                pročitali, razumjeli i pristali biti vezani ovim Uvjetima.
+                pročitali, razumjeli i pristali na ove Uvjete.
               </p>
             </section>
 
@@ -170,8 +166,8 @@ export default function TermsOfServicePage() {
               
               <h3 className="text-xl font-semibold mb-3 mt-4">7.1 Postanak instruktorom</h3>
               <p>
-                Korisnici mogu aplicirati za status instruktora. Svi instruktorski zahtjevi podliježu 
-                pregledu i odobrenju od strane Gurmania. Zadržavamo pravo odbiti ili povući instruktorski 
+                Korisnici se mogu prijaviti za status instruktora. Sve prijave  podliježu 
+                pregledu i odobrenju od strane administratora Platforme. Zadržavamo pravo odbiti ili povući instruktorski 
                 status prema vlastitoj prosudbi.
               </p>
 
@@ -181,24 +177,24 @@ export default function TermsOfServicePage() {
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Pružiti točne podatke o svojim kvalifikacijama i iskustvu</li>
-                <li>Kreirati originalni, kvalitetan edukativni sadržaj</li>
-                <li>Održavati profesionalne standarde u komunikaciji sa studentima</li>
+                <li>Kreirati originalni, kvalitetan i edukativni sadržaj</li>
+                <li>Održavati profesionalne standarde u komunikaciji s polaznicima</li>
                 <li>Poštivati autorska prava i prava intelektualnog vlasništva</li>
-                <li>Ne dijeliti povjerljive informacije o studentima</li>
+                <li>Ne dijeliti povjerljive informacije o polaznicima</li>
                 <li>Pridržavati se svih primjenjivih zakona i propisa</li>
               </ul>
 
               <h3 className="text-xl font-semibold mb-3 mt-4">7.3 Sadržaj tečajeva</h3>
               <p>
-                Instruktori zadržavaju autorska prava na svoje tečajeve i lekcije, ali daju Gurmania 
-                licencu za hostanje, distribuciju i promociju njihovog sadržaja na Platformi.
+                Instruktori zadržavaju autorska prava na svoje tečajeve i lekcije, ali daju Gurmaniji
+                licencu za distribuciju i promociju njihovog sadržaja na Platformi.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">8. Plaćanja i povrati (rezervirano za buduću upotrebu)</h2>
               <p>
-                Trenutno su svi tečajevi na Platformi besplatni. U budućnosti možemo uvesti plaćene 
+                Trenutno su svi tečajevi na Platformi besplatni. U budućnosti zadržavamo pravo uvesti plaćene 
                 tečajeve. Ako uvedemo plaćene usluge, ažurirat ćemo ove Uvjete s relevantnim informacijama 
                 o cijenama, načinima plaćanja i politikama povrata.
               </p>
@@ -214,7 +210,7 @@ export default function TermsOfServicePage() {
                 postoje zakonske obveze čuvanja).
               </p>
 
-              <h3 className="text-xl font-semibold mb-3 mt-4">9.2 Prekid od strane Gurmania</h3>
+              <h3 className="text-xl font-semibold mb-3 mt-4">9.2 Prekid od strane Gurmanije</h3>
               <p>
                 Možemo suspendirati ili prekinuti vaš pristup Platformi odmah, bez prethodne obavijesti 
                 ili odgovornosti, iz bilo kojeg razloga, uključujući ali ne ograničavajući se na kršenje 
@@ -252,7 +248,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">11. Ograničenje odgovornosti</h2>
               <p>
-                U najvećoj mjeri dopuštenoj zakonom, Gurmania i njegove podružnice, direktori, zaposlenici 
+                U najvećoj mjeri dopuštenoj zakonom, Gurmania i njezine podružnice, direktori, zaposlenici 
                 ili agenti neće biti odgovorni za:
               </p>
               <ul className="list-disc pl-6 space-y-2">
@@ -261,10 +257,11 @@ export default function TermsOfServicePage() {
                 <li>Štetu nastalu korištenjem ili nemogućnosti korištenja Platforme</li>
                 <li>Neovlašteni pristup ili promjenu vaših prijenosa ili podataka</li>
                 <li>Izjave ili ponašanje trećih strana na Platformi</li>
+                <li>Fizička bol krajnjem Korisniku (primjerice, udarac tupim predmetom u potiljak)</li>
                 <li>Bilo kakve druge stvari povezane s Platformom</li>
               </ul>
               <p className="mt-3">
-                Ova ograničenja će se primjenjivati čak i ako je Gurmania bio obaviješten o mogućnosti 
+                Ova ograničenja će se primjenjivati čak i ako je Gurmania bila obaviještena o mogućnosti 
                 takve štete.
               </p>
             </section>

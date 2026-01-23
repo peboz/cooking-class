@@ -74,6 +74,8 @@ interface CourseData {
       title: string;
       description: string | null;
       durationMin: number | null;
+      prepTimeMin: number | null;
+      cookTimeMin: number | null;
       order: number;
     }>;
   }>;
@@ -120,7 +122,8 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<CourseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
-  const [isInstructor, setIsInstructor] = useState(false);
+  const isInstructor = session?.user?.role === 'INSTRUCTOR' || session?.user?.role === 'ADMIN';
+  const isAdmin = session?.user?.role === 'ADMIN';
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
@@ -137,7 +140,6 @@ export default function CourseDetailPage() {
 
     if (status === "authenticated") {
       fetchCourse();
-      fetchUserProfile();
       fetchCertificate();
       fetchCourseWorkshops();
     }
@@ -157,18 +159,6 @@ export default function CourseDetailPage() {
       console.error('Error fetching workshops:', error);
     } finally {
       setWorkshopsLoading(false);
-    }
-  };
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setIsInstructor(data.role === 'INSTRUCTOR' || data.role === 'ADMIN' || data.instructorProfile?.verified);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
     }
   };
 
@@ -300,8 +290,8 @@ export default function CourseDetailPage() {
 
   if (loading || status === "loading") {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={isAdmin} />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Skeleton className="h-32 w-full mb-8" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -335,11 +325,12 @@ export default function CourseDetailPage() {
     : 0;
   
   const totalDuration = course.modules.reduce(
-    (acc, module) => 
-      acc + module.lessons.reduce(
-        (lAcc, lesson) => lAcc + (lesson.durationMin || 0),
-        0
-      ),
+    (acc, module) =>
+      acc + module.lessons.reduce((lAcc, lesson) => {
+        const prepCookTotal = (lesson.prepTimeMin || 0) + (lesson.cookTimeMin || 0);
+        const fallback = lesson.durationMin || 0;
+        return lAcc + (prepCookTotal > 0 ? prepCookTotal : fallback);
+      }, 0),
     0
   );
 
@@ -368,8 +359,8 @@ export default function CourseDetailPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
+        <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+      <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={isAdmin} />
       
       <main className="flex-1">
         <CourseTitle 

@@ -1,8 +1,11 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Star, BookOpen } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Clock, Star, BookOpen, Info } from "lucide-react"
 
 interface CourseCardProps {
   course: {
@@ -14,6 +17,7 @@ interface CourseCardProps {
     rating?: number
     lessonCount?: number
     image: string
+    recommendationReason?: string
   }
   href?: string
 }
@@ -43,6 +47,29 @@ export function CourseCard({ course, href }: CourseCardProps) {
           <CardTitle className="text-sm font-semibold line-clamp-2 leading-tight">
             {course.title}
           </CardTitle>
+
+          {course.recommendationReason && (
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+                Preporuka
+              </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                    aria-label="Zašto je preporučeno"
+                  >
+                    <Info className="w-3 h-3" />
+                    Zašto?
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {course.recommendationReason}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
 
           {/* Instructor - truncated */}
           <CardDescription className="text-xs truncate">
