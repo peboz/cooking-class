@@ -23,11 +23,7 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-2">
             <h1 className="text-4xl font-bold tracking-tight">Politika privatnosti</h1>
             <p className="text-muted-foreground">
-              Posljednje ažurirano: {new Date().toLocaleDateString("hr-HR", { 
-                year: "numeric", 
-                month: "long", 
-                day: "numeric" 
-              })}
+              Posljednje ažurirano: 20. 1. 2026.
             </p>
           </div>
 
@@ -35,7 +31,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">1. Uvod</h2>
               <p>
-                Dobrodošli na Gurmania platformu. Ova Politika privatnosti objašnjava kako prikupljamo, 
+                Dobro došli na Gurmaniju. Ova Politika privatnosti objašnjava kako prikupljamo, 
                 koristimo, čuvamo i štitimo vaše osobne podatke kada koristite našu platformu za online 
                 tečajeve kuhanja. Pridajemo veliku važnost zaštiti vaše privatnosti i posvećeni smo 
                 transparentnosti u vezi s vašim osobnim podacima.

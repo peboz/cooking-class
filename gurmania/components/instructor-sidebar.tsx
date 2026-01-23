@@ -33,17 +33,11 @@ import {
 const data = {
   navMain: [
     {
-      title: "Pregled",
       items: [
         {
           title: "Dashboard",
           url: "/app/instructor",
           icon: LayoutDashboard,
-        },
-        {
-          title: "Analitika",
-          url: "/app/instructor/analytics",
-          icon: BarChart3,
         },
       ],
     },
@@ -118,9 +112,9 @@ export function InstructorSidebar({ ...props }: React.ComponentProps<typeof Side
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {data.navMain.map((section) => (
-          <SidebarGroup key={section.title}>
-            <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+        {data.navMain.map((section, index) => (
+          <SidebarGroup key={section.title || `section-${index}`}>
+            {section.title && <SidebarGroupLabel>{section.title}</SidebarGroupLabel>}
             <SidebarGroupContent>
               <SidebarMenu>
                 {section.items.map((item) => (
