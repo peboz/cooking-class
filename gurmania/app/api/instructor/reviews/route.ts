@@ -27,6 +27,7 @@ export async function GET() {
         reviews: {
           where: {
             targetType: 'COURSE',
+            status: 'APPROVED',
           },
           select: {
             id: true,

@@ -54,6 +54,12 @@ export async function GET(
         },
         media: true,
         reviews: {
+          where: {
+            OR: [
+              { status: 'APPROVED' },
+              { userId: session.user.id },
+            ],
+          },
           include: {
             user: {
               select: {

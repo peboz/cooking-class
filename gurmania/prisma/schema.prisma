@@ -68,6 +68,12 @@ enum CommentStatus {
   REJECTED
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // MODELI KORISNIKA
 
 model User {
@@ -515,6 +521,7 @@ model Review {
   rating      Int      @db.SmallInt
   comment     String?
   photoUrl    String?
+  status      ReviewStatus @default(PENDING)
   createdAt   DateTime @default(now())
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -524,6 +531,7 @@ model Review {
 
   @@index([targetType])
   @@index([rating])
+  @@index([status])
   @@index([userId])
   @@index([lessonId])
   @@index([courseId])

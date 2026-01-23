@@ -8,9 +8,7 @@ import {
   Users,
   ChefHat,
   BookOpen,
-  Video,
   MessageSquare,
-  Settings,
   FileText,
   ShieldAlert,
   BarChart3,
@@ -72,11 +70,6 @@ const data = {
           icon: BookOpen,
         },
         {
-          title: "Live radionice",
-          url: "/admin/workshops",
-          icon: Video,
-        },
-        {
           title: "Komentari",
           url: "/admin/comments",
           icon: MessageSquare,
@@ -95,11 +88,6 @@ const data = {
           title: "Audit log",
           url: "/admin/audit-log",
           icon: FileText,
-        },
-        {
-          title: "Postavke",
-          url: "/admin/settings",
-          icon: Settings,
         },
       ],
     },

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, BookOpen, Video, MessageSquare, ShieldAlert } from "lucide-react";
+import { Users, BookOpen, Video, MessageSquare } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -72,12 +72,13 @@ export default async function AdminAnalyticsPage() {
       },
     }),
     prisma.review.aggregate({
+      where: { status: "APPROVED" },
       _avg: { rating: true },
       _count: { _all: true },
     }),
     prisma.review.groupBy({
       by: ["courseId"],
-      where: { targetType: "COURSE", courseId: { not: null } },
+      where: { targetType: "COURSE", courseId: { not: null }, status: "APPROVED" },
       _avg: { rating: true },
       _count: { _all: true },
       orderBy: { _avg: { rating: "desc" } },
@@ -390,7 +391,7 @@ export default async function AdminAnalyticsPage() {
                     {topCoursesByRating.map((item) => {
                       const course = courseTitleMap.get(item.courseId ?? "");
                       return (
-                        <TableRow key={item.courseId ?? Math.random().toString()}>
+                        <TableRow key={item.courseId ?? `${item._avg.rating}-${item._count._all}` }>
                           <TableCell>{course?.title ?? "Nepoznat tečaj"}</TableCell>
                           <TableCell>{course?.instructor?.name ?? "-"}</TableCell>
                           <TableCell className="text-right">

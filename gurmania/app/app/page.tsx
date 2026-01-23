@@ -5,6 +5,7 @@ import { Footer } from "@/components/footer"
 import { BookOpen, Sparkles, Video } from "lucide-react"
 import { CourseSection } from "@/components/course-section"
 import { prisma } from "@/prisma"
+import { ReviewStatus } from "@/app/generated/prisma/client"
 
 // Helper function to format course data
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,6 +98,7 @@ export default async function AppPage() {
     },
     media: true,
     reviews: {
+      where: { status: ReviewStatus.APPROVED },
       select: {
         rating: true,
       },
