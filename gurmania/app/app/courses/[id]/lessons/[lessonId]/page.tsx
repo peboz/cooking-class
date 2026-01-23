@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -80,6 +81,7 @@ export default function LessonViewerPage() {
   const [showLockedDialog, setShowLockedDialog] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [isAddingToShoppingList, setIsAddingToShoppingList] = useState(false);
 
   useEffect(() => {
     fetchLesson();
@@ -117,9 +119,10 @@ export default function LessonViewerPage() {
   };
 
   const handleGenerateShoppingList = async () => {
-    if (!lesson) return;
+    if (!lesson || isAddingToShoppingList) return;
     
     try {
+      setIsAddingToShoppingList(true);
       const response = await fetch('/api/shopping-lists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,13 +133,19 @@ export default function LessonViewerPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create shopping list');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to add to shopping list');
       }
 
-      alert('Lista za kupovinu je stvorena!');
+      toast.success('Sastojci su dodani u kupovnu listu!');
+      
+      // Trigger navbar refresh by dispatching custom event
+      window.dispatchEvent(new CustomEvent('shopping-list-updated'));
     } catch (err) {
-      console.error('Error creating shopping list:', err);
-      alert('Greška pri stvaranju liste za kupovinu');
+      console.error('Error adding to shopping list:', err);
+      toast.error(err instanceof Error ? err.message : 'Greška pri dodavanju u kupovnu listu');
+    } finally {
+      setIsAddingToShoppingList(false);
     }
   };
 
@@ -217,7 +226,7 @@ export default function LessonViewerPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
         <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Skeleton className="h-96 w-full mb-6" />
@@ -238,7 +247,7 @@ export default function LessonViewerPage() {
 
   if (error || !lesson) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
         <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Card className="max-w-2xl mx-auto">
@@ -287,7 +296,7 @@ export default function LessonViewerPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
+    <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         {/* Breadcrumbs */}
@@ -500,9 +509,10 @@ export default function LessonViewerPage() {
                     variant="outline" 
                     className="w-full"
                     onClick={handleGenerateShoppingList}
+                    disabled={isAddingToShoppingList}
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
-                    Stvori listu za kupovinu
+                    {isAddingToShoppingList ? 'Dodajem...' : 'Dodaj u kupovnu listu'}
                   </Button>
                 </CardContent>
               </Card>

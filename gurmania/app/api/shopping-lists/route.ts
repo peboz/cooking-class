@@ -58,20 +58,93 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create shopping list
-    const shoppingList = await prisma.shoppingList.create({
-      data: {
-        userId: session.user.id,
-        title: title || `${lesson.module.course.title} - ${lesson.title}`,
+    // Find or create user's master shopping list
+    let shoppingList = await prisma.shoppingList.findFirst({
+      where: { userId: session.user.id },
+      include: {
         items: {
-          create: lesson.ingredients.map(lessonIngredient => ({
+          include: {
+            ingredient: true,
+          },
+        },
+      },
+    });
+
+    if (!shoppingList) {
+      // Create new master shopping list
+      shoppingList = await prisma.shoppingList.create({
+        data: {
+          userId: session.user.id,
+          title: 'Moja kupovna lista',
+        },
+        include: {
+          items: {
+            include: {
+              ingredient: true,
+            },
+          },
+        },
+      });
+    }
+
+    // Add ingredients to the shopping list
+    for (const lessonIngredient of lesson.ingredients) {
+      // Check if item already exists in the database
+      const existingItem = await prisma.shoppingListItem.findUnique({
+        where: {
+          shoppingListId_ingredientId: {
+            shoppingListId: shoppingList.id,
+            ingredientId: lessonIngredient.ingredientId,
+          },
+        },
+      });
+
+      if (existingItem) {
+        // If same unit or both null, add quantities together
+        if (existingItem.unit === lessonIngredient.unit) {
+          const newQuantity = (existingItem.quantity || 0) + (lessonIngredient.quantity || 0);
+          await prisma.shoppingListItem.update({
+            where: { id: existingItem.id },
+            data: { quantity: newQuantity },
+          });
+        } else {
+          // Different units - update to the new unit and quantity
+          // (since schema doesn't allow multiple entries for same ingredient)
+          await prisma.shoppingListItem.update({
+            where: { id: existingItem.id },
+            data: {
+              quantity: lessonIngredient.quantity,
+              unit: lessonIngredient.unit,
+            },
+          });
+        }
+      } else {
+        // Create new item
+        await prisma.shoppingListItem.create({
+          data: {
+            shoppingListId: shoppingList.id,
             ingredientId: lessonIngredient.ingredientId,
             quantity: lessonIngredient.quantity,
             unit: lessonIngredient.unit,
             purchased: false,
-          })),
+          },
+        });
+      }
+    }
+
+    // Link the lesson to the shopping list (many-to-many relation)
+    await prisma.shoppingList.update({
+      where: { id: shoppingList.id },
+      data: {
+        lessons: {
+          connect: { id: lessonId },
         },
       },
+    });
+
+    // Fetch updated shopping list
+    const updatedShoppingList = await prisma.shoppingList.findUnique({
+      where: { id: shoppingList.id },
       include: {
         items: {
           include: {
@@ -84,10 +157,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       shoppingList: {
-        id: shoppingList.id,
-        title: shoppingList.title,
-        items: shoppingList.items,
-        createdAt: shoppingList.createdAt,
+        id: updatedShoppingList!.id,
+        title: updatedShoppingList!.title,
+        items: updatedShoppingList!.items,
+        createdAt: updatedShoppingList!.createdAt,
       },
     });
   } catch (error) {
@@ -120,6 +193,24 @@ export async function GET(request: NextRequest) {
             ingredient: true,
           },
         },
+        lessons: {
+          include: {
+            ingredients: {
+              include: {
+                ingredient: true,
+              },
+            },
+            module: {
+              include: {
+                course: {
+                  select: {
+                    title: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -139,6 +230,17 @@ export async function GET(request: NextRequest) {
           ingredient: {
             name: item.ingredient.name,
           },
+        })),
+        lessons: list.lessons.map(lesson => ({
+          id: lesson.id,
+          title: lesson.title,
+          courseTitle: lesson.module.course.title,
+          ingredients: lesson.ingredients.map(li => ({
+            ingredientId: li.ingredientId,
+            name: li.ingredient.name,
+            quantity: li.quantity,
+            unit: li.unit,
+          })),
         })),
         createdAt: list.createdAt,
         totalItems: list.items.length,

@@ -50,6 +50,7 @@ export default function InstructorProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isInstructor = session?.user?.role === 'INSTRUCTOR' || session?.user?.role === 'ADMIN';
+  const isAdmin = session?.user?.role === 'ADMIN';
 
   useEffect(() => {
     const fetchInstructorProfile = async () => {
@@ -77,8 +78,8 @@ export default function InstructorProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={isAdmin} />
         <div className="container mx-auto px-4 py-8 max-w-6xl flex-1">
           <Skeleton className="h-8 w-32 mb-8" />
           
@@ -108,8 +109,8 @@ export default function InstructorProfilePage() {
 
   if (error || !data) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={isAdmin} />
         <div className="container mx-auto px-4 py-8 max-w-6xl flex-1">
           <Link href="/app/courses">
             <Button variant="ghost" className="mb-6 gap-2">
@@ -136,8 +137,8 @@ export default function InstructorProfilePage() {
   const { instructor, stats, courses } = data;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
+        <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+      <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={isAdmin} />
       <div className="container mx-auto px-4 py-8 max-w-6xl flex-1">
         {/* Back button */}
         <Link href="/app/courses">

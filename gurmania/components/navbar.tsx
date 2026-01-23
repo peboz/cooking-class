@@ -54,17 +54,43 @@ interface ShoppingListItem {
   };
 }
 
+interface LessonIngredient {
+  ingredientId: string;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+}
+
+interface ShoppingListLesson {
+  id: string;
+  title: string;
+  courseTitle: string;
+  ingredients: LessonIngredient[];
+}
+
+interface ShoppingListData {
+  items: ShoppingListItem[];
+  lessons: ShoppingListLesson[];
+}
+
 export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
   const [open, setOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [shoppingListOpen, setShoppingListOpen] = useState(false)
-  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([])
+  const [shoppingListData, setShoppingListData] = useState<ShoppingListData>({ items: [], lessons: [] })
   const [loadingList, setLoadingList] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    // Fetch shopping list on mount if user is logged in
+    if (mounted && user) {
+      fetchShoppingList()
+    }
+  }, [mounted, user])
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -103,11 +129,14 @@ export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
       const response = await fetch('/api/shopping-lists')
       if (response.ok) {
         const data = await response.json()
-        // Get the most recent shopping list or create empty array
+        // Get the most recent shopping list or create empty data
         if (data.lists && data.lists.length > 0) {
-          setShoppingList(data.lists[0].items || [])
+          setShoppingListData({
+            items: data.lists[0].items || [],
+            lessons: data.lists[0].lessons || [],
+          })
         } else {
-          setShoppingList([])
+          setShoppingListData({ items: [], lessons: [] })
         }
       }
     } catch (error) {
@@ -126,11 +155,12 @@ export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
       })
       
       if (response.ok) {
-        setShoppingList(prev => 
-          prev.map(item => 
+        setShoppingListData(prev => ({
+          ...prev,
+          items: prev.items.map(item => 
             item.id === itemId ? { ...item, purchased } : item
           )
-        )
+        }))
       }
     } catch (error) {
       console.error('Error updating item:', error)
@@ -144,7 +174,10 @@ export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
       })
       
       if (response.ok) {
-        setShoppingList(prev => prev.filter(item => item.id !== itemId))
+        setShoppingListData(prev => ({
+          ...prev,
+          items: prev.items.filter(item => item.id !== itemId)
+        }))
       }
     } catch (error) {
       console.error('Error deleting item:', error)
@@ -156,6 +189,16 @@ export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
       fetchShoppingList()
     }
   }, [shoppingListOpen])
+
+  useEffect(() => {
+    // Listen for shopping list updates from other components
+    const handleShoppingListUpdate = () => {
+      fetchShoppingList()
+    }
+
+    window.addEventListener('shopping-list-updated', handleShoppingListUpdate)
+    return () => window.removeEventListener('shopping-list-updated', handleShoppingListUpdate)
+  }, [])
 
   return (
     <>
@@ -215,9 +258,9 @@ export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
                   className="relative"
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  {shoppingList.length > 0 && (
+                  {shoppingListData.items.length > 0 && (
                     <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-orange-600 text-white text-xs flex items-center justify-center">
-                      {shoppingList.filter(item => !item.purchased).length}
+                      {shoppingListData.items.filter(item => !item.purchased).length}
                     </span>
                   )}
                 </Button>
@@ -343,58 +386,77 @@ export function Navbar({ user, isInstructor, isAdmin }: NavbarProps) {
             <div className="flex justify-center py-8">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
-          ) : shoppingList.length === 0 ? (
+          ) : shoppingListData.items.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>Vaša lista za kupovinu je prazna</p>
               <p className="text-sm mt-1">Dodajte sastojke iz lekcija da biste započeli</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {shoppingList.map((item) => (
-                <Card key={item.id} className={item.purchased ? 'opacity-60' : ''}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={item.purchased}
-                        onCheckedChange={(checked) => 
-                          toggleItemPurchased(item.id, checked as boolean)
-                        }
-                      />
-                      <div className="flex-1">
-                        <span className={item.purchased ? 'line-through' : ''}>
-                          {item.quantity && item.unit && (
-                            <span className="font-medium">
-                              {item.quantity} {item.unit}{' '}
-                            </span>
-                          )}
-                          {item.ingredient.name}
-                        </span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+            <div className="space-y-4">
+              {shoppingListData.lessons.map((lesson) => {
+                // Find items that belong to this lesson
+                const lessonItems = shoppingListData.items.filter(item =>
+                  lesson.ingredients.some(ing => ing.ingredientId === item.ingredientId)
+                );
+
+                if (lessonItems.length === 0) return null;
+
+                return (
+                  <div key={lesson.id} className="space-y-2">
+                    <h3 className="font-semibold text-sm text-orange-600 flex items-center gap-2 sticky top-0 bg-background py-2">
+                      <ChefHat className="h-4 w-4" />
+                      {lesson.courseTitle} - {lesson.title}
+                    </h3>
+                    <div className="space-y-2">
+                      {lessonItems.map((item) => (
+                        <Card key={item.id} className={item.purchased ? 'opacity-60' : ''}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                checked={item.purchased}
+                                onCheckedChange={(checked) => 
+                                  toggleItemPurchased(item.id, checked as boolean)
+                                }
+                              />
+                              <div className="flex-1">
+                                <span className={item.purchased ? 'line-through' : ''}>
+                                  {item.quantity && item.unit && (
+                                    <span className="font-medium">
+                                      {item.quantity} {item.unit}{' '}
+                                    </span>
+                                  )}
+                                  {item.ingredient.name}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => deleteItem(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          {shoppingList.length > 0 && (
+          {shoppingListData.items.length > 0 && (
             <div className="pt-4 border-t">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Ukupno stavki:</span>
-                <span className="font-medium">{shoppingList.length}</span>
+                <span className="font-medium">{shoppingListData.items.length}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground mt-1">
                 <span>Kupljeno:</span>
                 <span className="font-medium">
-                  {shoppingList.filter(item => item.purchased).length}
+                  {shoppingListData.items.filter(item => item.purchased).length}
                 </span>
               </div>
             </div>

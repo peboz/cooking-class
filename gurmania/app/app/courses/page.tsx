@@ -202,7 +202,7 @@ function CourseBrowseContent() {
   const hasFilters = search || selectedDifficulties.length > 0 || selectedCuisines.length > 0 || selectedAllergens.length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
       <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={isAdmin} />
       
       <main className="flex-1 container mx-auto px-4 py-8">
