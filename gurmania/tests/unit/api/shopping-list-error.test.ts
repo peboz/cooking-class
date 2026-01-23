@@ -131,12 +131,22 @@ describe('Shopping List Creation - Error Handling', () => {
 
     (prisma.lesson.findUnique as any).mockResolvedValue(lessonWithIngredients);
 
-    // Mock shopping list creation
-    const createdShoppingList = {
+    const baseShoppingList = {
       id: 'shopping-list-1',
       userId: mockSession.user.id,
-      title: requestBody.title,
+      title: 'Moja kupovna lista',
       createdAt: new Date(),
+      items: [],
+    };
+
+    (prisma.shoppingList.findFirst as any).mockResolvedValue(null);
+    (prisma.shoppingList.create as any).mockResolvedValue(baseShoppingList);
+    (prisma.shoppingListItem.findUnique as any).mockResolvedValue(null);
+    (prisma.shoppingListItem.create as any).mockResolvedValue({});
+    (prisma.shoppingList.update as any).mockResolvedValue({});
+
+    const updatedShoppingList = {
+      ...baseShoppingList,
       items: [
         {
           id: 'item-1',
@@ -157,7 +167,7 @@ describe('Shopping List Creation - Error Handling', () => {
       ],
     };
 
-    (prisma.shoppingList.create as any).mockResolvedValue(createdShoppingList);
+    (prisma.shoppingList.findUnique as any).mockResolvedValue(updatedShoppingList);
 
     const request = new NextRequest('http://localhost:3000/api/shopping-lists', {
       method: 'POST',
@@ -170,9 +180,15 @@ describe('Shopping List Creation - Error Handling', () => {
     // Očekivani rezultat: uspješno kreirana lista
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.shoppingList.id).toBe(createdShoppingList.id);
+    expect(data.shoppingList.id).toBe(updatedShoppingList.id);
     expect(data.shoppingList.items).toHaveLength(2);
-    expect(prisma.shoppingList.create).toHaveBeenCalled();
+    expect(prisma.shoppingList.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: 'Moja kupovna lista',
+        }),
+      })
+    );
   });
 
   it('should reject request without lessonId (boundary condition)', async () => {
@@ -245,15 +261,20 @@ describe('Shopping List Creation - Error Handling', () => {
 
     (prisma.lesson.findUnique as any).mockResolvedValue(lessonWithIngredients);
 
-    const createdShoppingList = {
+    const baseShoppingList = {
       id: 'shopping-list-default',
       userId: mockSession.user.id,
-      title: 'Italian Basics - Pasta Carbonara',
+      title: 'Moja kupovna lista',
       items: [],
       createdAt: new Date(),
     };
 
-    (prisma.shoppingList.create as any).mockResolvedValue(createdShoppingList);
+    (prisma.shoppingList.findFirst as any).mockResolvedValue(null);
+    (prisma.shoppingList.create as any).mockResolvedValue(baseShoppingList);
+    (prisma.shoppingListItem.findUnique as any).mockResolvedValue(null);
+    (prisma.shoppingListItem.create as any).mockResolvedValue({});
+    (prisma.shoppingList.update as any).mockResolvedValue({});
+    (prisma.shoppingList.findUnique as any).mockResolvedValue(baseShoppingList);
 
     const request = new NextRequest('http://localhost:3000/api/shopping-lists', {
       method: 'POST',
@@ -263,12 +284,12 @@ describe('Shopping List Creation - Error Handling', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    // Očekivani rezultat: koristio se default naslov
+    // Očekivani rezultat: koristi se master lista s default naslovom
     expect(response.status).toBe(200);
     expect(prisma.shoppingList.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          title: 'Italian Basics - Pasta Carbonara',
+          title: 'Moja kupovna lista',
         }),
       })
     );

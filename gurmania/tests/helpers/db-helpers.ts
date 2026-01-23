@@ -42,7 +42,16 @@ export const createMockPrisma = () => {
     },
     shoppingList: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
+    },
+    shoppingListItem: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
     lesson: {
       findUnique: vi.fn(),
