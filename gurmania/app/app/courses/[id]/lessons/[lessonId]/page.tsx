@@ -76,28 +76,15 @@ export default function LessonViewerPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isInstructor, setIsInstructor] = useState(false);
+  const isInstructor = session?.user?.role === 'INSTRUCTOR' || session?.user?.role === 'ADMIN';
   const [showLockedDialog, setShowLockedDialog] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
 
   useEffect(() => {
     fetchLesson();
-    fetchUserProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setIsInstructor(data.role === 'INSTRUCTOR' || data.role === 'ADMIN' || data.instructorProfile?.verified);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
 
   const fetchLesson = async () => {
     try {

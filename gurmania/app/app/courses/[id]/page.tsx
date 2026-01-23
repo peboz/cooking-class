@@ -120,7 +120,7 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<CourseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
-  const [isInstructor, setIsInstructor] = useState(false);
+  const isInstructor = session?.user?.role === 'INSTRUCTOR' || session?.user?.role === 'ADMIN';
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
@@ -137,7 +137,6 @@ export default function CourseDetailPage() {
 
     if (status === "authenticated") {
       fetchCourse();
-      fetchUserProfile();
       fetchCertificate();
       fetchCourseWorkshops();
     }
@@ -157,18 +156,6 @@ export default function CourseDetailPage() {
       console.error('Error fetching workshops:', error);
     } finally {
       setWorkshopsLoading(false);
-    }
-  };
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setIsInstructor(data.role === 'INSTRUCTOR' || data.role === 'ADMIN' || data.instructorProfile?.verified);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
     }
   };
 

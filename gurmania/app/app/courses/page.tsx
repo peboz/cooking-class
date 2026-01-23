@@ -52,8 +52,11 @@ function CourseBrowseContent() {
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
-  const [isInstructor, setIsInstructor] = useState(false);
   const limit = 20;
+
+  // Check if user is instructor from session
+  const isInstructor = session?.user?.role === 'INSTRUCTOR' || session?.user?.role === 'ADMIN';
+  const isAdmin = session?.user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchCourses();
@@ -62,21 +65,8 @@ function CourseBrowseContent() {
     } else {
       setInstructors([]);
     }
-    fetchUserProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, sortBy, selectedDifficulties, selectedCuisines, selectedAllergens, offset]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setIsInstructor(data.role === 'INSTRUCTOR' || data.role === 'ADMIN' || data.instructorProfile?.verified);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
 
   const fetchCourses = async () => {
     try {
@@ -213,7 +203,7 @@ function CourseBrowseContent() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={session?.user?.role === 'ADMIN'} />
+      <Navbar user={session?.user} isInstructor={isInstructor} isAdmin={isAdmin} />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
@@ -438,8 +428,8 @@ function FilterSection({
     <>
       {/* Difficulty filter */}
       <div>
-        <h3 className="font-semibold mb-3">Težina</h3>
-        <div className="space-y-2">
+        <h3 className="font-semibold mb-3 pl-2">Težina</h3>
+        <div className="space-y-2 pl-2">
           {DIFFICULTY_LEVELS.map(level => (
             <div key={level.value} className="flex items-center space-x-2">
               <Checkbox
@@ -457,8 +447,8 @@ function FilterSection({
 
       {/* Cuisine type filter */}
       <div>
-        <h3 className="font-semibold mb-3">Vrsta kuhinje</h3>
-        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+        <h3 className="font-semibold mb-3 pl-2">Vrsta kuhinje</h3>
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 pl-2">
           {CUISINE_TYPES.map(cuisine => (
             <div key={cuisine} className="flex items-center space-x-2">
               <Checkbox
@@ -476,8 +466,8 @@ function FilterSection({
 
       {/* Allergen filter */}
       <div>
-        <h3 className="font-semibold mb-3">Bez alergena</h3>
-        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+        <h3 className="font-semibold mb-3 pl-2">Bez alergena</h3>
+        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 pl-2">
           {ALLERGENS.map(allergen => (
             <div key={allergen} className="flex items-center space-x-2">
               <Checkbox
