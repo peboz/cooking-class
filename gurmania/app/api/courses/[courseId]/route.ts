@@ -98,7 +98,7 @@ export async function GET(
 
     // Type assertion to fix TypeScript inference issue with Prisma includes
     const courseData = course as {
-      modules: Array<{ id: string; title: string; description: string | null; order: number; lessons: Array<{ id: string; title: string; description: string | null; order: number; durationMin: number | null }> }>;
+      modules: Array<{ id: string; title: string; description: string | null; order: number; lessons: Array<{ id: string; title: string; description: string | null; order: number; durationMin: number | null; prepTimeMin: number | null; cookTimeMin: number | null }> }>;
       reviews: Array<{ id: string; rating: number; comment: string | null; createdAt: Date; user: { id: string; name: string | null; image: string | null } }>;
       media: Array<{ id: string; type: string; url: string }>;
       instructor: {
@@ -257,6 +257,8 @@ export async function GET(
           description: lesson.description,
           order: lesson.order,
           durationMin: lesson.durationMin,
+          prepTimeMin: lesson.prepTimeMin,
+          cookTimeMin: lesson.cookTimeMin,
         })),
       })),
       reviews: courseData.reviews.map((review) => ({
