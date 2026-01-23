@@ -18,7 +18,7 @@ export function InstructorCard({
   verified,
 }: InstructorCardProps) {
   return (
-    <Link href={`/profile/instructor/${id}`}>
+    <Link href={`/app/profile/instructor/${id}`}>
       <Card className="h-full transition-shadow hover:shadow-md">
         <CardContent className="flex items-center gap-4 p-4">
           <Avatar className="h-12 w-12">
