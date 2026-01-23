@@ -247,6 +247,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
+    async signIn({ user }) {
+      if (user?.id) {
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          })
+        } catch (error) {
+          console.error("Failed to update lastLoginAt:", error)
+        }
+      }
+    },
     async linkAccount({ user, account, profile }) {
       // When an account is linked, verify the email automatically for OAuth providers
       if (account.provider !== "credentials" && user.email) {
