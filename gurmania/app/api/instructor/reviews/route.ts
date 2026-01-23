@@ -32,6 +32,7 @@ export async function GET() {
             id: true,
             rating: true,
             comment: true,
+            photoUrl: true,
             createdAt: true,
             user: {
               select: {
