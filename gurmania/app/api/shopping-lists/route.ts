@@ -61,6 +61,9 @@ export async function POST(request: NextRequest) {
     // Find or create user's master shopping list
     let shoppingList = await prisma.shoppingList.findFirst({
       where: { userId: session.user.id },
+      orderBy: {
+        createdAt: 'desc',
+      },
       include: {
         items: {
           include: {
