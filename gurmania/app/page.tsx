@@ -143,9 +143,11 @@ export default async function Home() {
             </AnimatedItem>
             <AnimatedItem>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-orange-600 hover:bg-orange-700 text-lg px-8">
-                  Počni učiti
-                </Button>
+                <Link href="/auth/register">
+                  <Button size="lg" className="bg-orange-600 hover:bg-orange-700 text-lg px-8">
+                    Počni učiti
+                  </Button>
+                </Link>
               </div>
             </AnimatedItem>
             <AnimatedItem>
