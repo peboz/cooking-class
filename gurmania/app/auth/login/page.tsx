@@ -1,15 +1,22 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from "@/components/ui/input-otp"
 
-type LoginStep = "email" | "password" | "oauth-required"
+type LoginStep = "email" | "password" | "oauth-required" | "two-factor"
 type EmailCheckResult = {
   exists: boolean
   verified?: boolean
@@ -23,16 +30,35 @@ type EmailCheckResult = {
   lastSentTime?: string | null
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<LoginStep>("email")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [twoFactorCode, setTwoFactorCode] = useState("")
+  const [useBackupCode, setUseBackupCode] = useState(false)
+  const [rememberDevice, setRememberDevice] = useState(true)
   const [emailCheckResult, setEmailCheckResult] = useState<EmailCheckResult | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error")
+    const codeParam = searchParams.get("code")
+
+    if (errorParam === "CredentialsSignin" && codeParam === "TwoFactorRequired") {
+      setStep("two-factor")
+      setError("")
+      return
+    }
+
+    if (errorParam === "TwoFactorRequired") {
+      setError("Za 2FA koristite prijavu lozinkom.")
+    }
+  }, [searchParams])
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,8 +122,21 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        // Map generic errors to user-friendly messages
-        if (result.error === "CredentialsSignin" || result.error === "Configuration") {
+        const resultCode = (result as { code?: string } | null)?.code
+
+        if (result.error === "CredentialsSignin" && resultCode === "TwoFactorRequired") {
+          setStep("two-factor")
+          setTwoFactorCode("")
+          setError("")
+          setLoading(false)
+          return
+        }
+
+        if (result.error === "CredentialsSignin" && resultCode === "InvalidTwoFactorCode") {
+          setError("Neispravan kod. Pokušajte ponovno.")
+        } else if (result.error === "CredentialsSignin" && resultCode === "TwoFactorSetupIncomplete") {
+          setError("2FA nije dovršena. Uključite 2FA iz postavki profila.")
+        } else if (result.error === "CredentialsSignin" || result.error === "Configuration") {
           setError("Neispravna e-mail adresa ili lozinka. Molimo pokušajte ponovno.")
         } else {
           setError(result.error)
@@ -113,6 +152,46 @@ export default function LoginPage() {
     }
   }
 
+  const handleTwoFactorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        otp: useBackupCode ? "" : twoFactorCode,
+        backupCode: useBackupCode ? twoFactorCode : "",
+        redirect: false,
+      })
+
+      if (result?.error) {
+        const resultCode = (result as { code?: string } | null)?.code
+        if (result.error === "CredentialsSignin" && resultCode === "InvalidTwoFactorCode") {
+          setError("Neispravan kod. Pokušajte ponovno.")
+        } else if (result.error === "CredentialsSignin" && resultCode === "TwoFactorSetupIncomplete") {
+          setError("2FA nije dovršena. Uključite 2FA iz postavki profila.")
+        } else {
+          setError("Došlo je do greške. Molimo pokušajte ponovno.")
+        }
+        setLoading(false)
+        return
+      }
+
+      if (result?.ok) {
+        if (rememberDevice) {
+          await fetch("/api/profile/2fa/trust-device", { method: "POST" })
+        }
+        router.push("/app")
+        router.refresh()
+      }
+    } catch {
+      setError("Došlo je do greške. Molimo pokušajte ponovno.")
+      setLoading(false)
+    }
+  }
+
   const handleGoogleSignIn = async () => {
     setLoading(true)
     await signIn("google", { callbackUrl: "/app" })
@@ -121,6 +200,8 @@ export default function LoginPage() {
   const handleBackToEmail = () => {
     setStep("email")
     setPassword("")
+    setTwoFactorCode("")
+    setUseBackupCode(false)
     setError("")
     setEmailCheckResult(null)
     setResendSuccess(false)
@@ -194,11 +275,13 @@ export default function LoginPage() {
             {step === "email" && "Dobrodošli natrag"}
             {step === "password" && `Dobrodošli natrag${emailCheckResult?.name ? `, ${emailCheckResult.name.split(' ')[0]}` : ""}`}
             {step === "oauth-required" && "Potrebna prijava"}
+            {step === "two-factor" && "Potvrda prijave"}
           </CardTitle>
           <CardDescription>
             {step === "email" && "Unesite svoj email za nastavak"}
             {step === "password" && "Unesite lozinku za nastavak"}
             {step === "oauth-required" && "Molimo autentificirajte se prvo s vašim OAuth providerom"}
+            {step === "two-factor" && "Unesite kod iz autentifikatorske aplikacije"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -422,6 +505,91 @@ export default function LoginPage() {
             </div>
           )}
 
+          {step === "two-factor" && (
+            <form onSubmit={handleTwoFactorSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="two-factor-code">
+                  {useBackupCode ? "Pričuvni kod" : "6-znamenkasti kod"}
+                </Label>
+                {useBackupCode ? (
+                  <Input
+                    id="two-factor-code"
+                    inputMode="text"
+                    placeholder="ABCDE-FGHIJ"
+                    value={twoFactorCode}
+                    onChange={(e) => setTwoFactorCode(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="font-mono"
+                  />
+                ) : (
+                  <InputOTP
+                    id="two-factor-code"
+                    value={twoFactorCode}
+                    onChange={setTwoFactorCode}
+                    maxLength={6}
+                    disabled={loading}
+                    containerClassName="justify-start"
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="use-backup-code"
+                  checked={useBackupCode}
+                  onCheckedChange={(checked) => setUseBackupCode(Boolean(checked))}
+                />
+                <Label htmlFor="use-backup-code" className="text-sm">
+                  Koristim pričuvni kod
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember-device"
+                  checked={rememberDevice}
+                  onCheckedChange={(checked) => setRememberDevice(Boolean(checked))}
+                />
+                <Label htmlFor="remember-device" className="text-sm">
+                  Zapamti ovaj uređaj (30 dana)
+                </Label>
+              </div>
+
+              {error && (
+                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Provjera..." : "Potvrdi prijavu"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={handleBackToEmail}
+                disabled={loading}
+              >
+                Koristi drugi email
+              </Button>
+            </form>
+          )}
+
           <div className="text-center text-sm">
             Nemate račun?{" "}
             <Link href="/auth/register" className="font-medium text-primary hover:underline">
@@ -431,6 +599,25 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold">Prijava</CardTitle>
+              <CardDescription>Učitavanje...</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   )
 }
 

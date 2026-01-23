@@ -1,9 +1,28 @@
-import NextAuth from "next-auth"
+import NextAuth, { CredentialsSignin } from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/prisma"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
+import {
+  decryptSecret,
+  hashDeviceToken,
+  normalizeBackupCode,
+  normalizeTwoFactorCode,
+  verifyTotp,
+} from "@/lib/two-factor"
+
+class TwoFactorRequiredError extends CredentialsSignin {
+  code = "TwoFactorRequired"
+}
+
+class InvalidTwoFactorCodeError extends CredentialsSignin {
+  code = "InvalidTwoFactorCode"
+}
+
+class TwoFactorSetupIncompleteError extends CredentialsSignin {
+  code = "TwoFactorSetupIncomplete"
+}
  
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -18,14 +37,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        otp: { label: "OTP", type: "text" },
+        backupCode: { label: "Backup code", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            password: true,
+            emailVerified: true,
+            isActive: true,
+            twoFactorEnabled: true,
+            twoFactorSecret: true,
+          },
         });
 
         if (!user || !user.password) {
@@ -52,6 +84,78 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        if (user.twoFactorEnabled) {
+          const cookieHeader = request?.headers?.get("cookie") || ""
+          const trustedToken = cookieHeader
+            .split(";")
+            .map((cookie) => cookie.trim())
+            .find((cookie) => cookie.startsWith("trusted_device="))
+            ?.split("=")[1]
+
+          let isTrustedDevice = false
+
+          if (trustedToken) {
+            const deviceHash = hashDeviceToken(trustedToken)
+            const trustedDevice = await prisma.trustedDevice.findFirst({
+              where: {
+                userId: user.id,
+                deviceIdHash: deviceHash,
+                expiresAt: { gt: new Date() },
+              },
+            })
+
+            if (trustedDevice) {
+              isTrustedDevice = true
+              await prisma.trustedDevice.update({
+                where: { id: trustedDevice.id },
+                data: { lastUsedAt: new Date() },
+              })
+            }
+          }
+
+          if (!isTrustedDevice) {
+            const otp = normalizeTwoFactorCode((credentials.otp as string) || "")
+            const backupCode = normalizeBackupCode((credentials.backupCode as string) || "")
+
+            if (!otp && !backupCode) {
+              throw new TwoFactorRequiredError()
+            }
+
+            if (otp) {
+              if (!user.twoFactorSecret) {
+                throw new TwoFactorSetupIncompleteError()
+              }
+
+              const secret = decryptSecret(user.twoFactorSecret)
+              const valid = verifyTotp(otp, secret)
+              if (!valid) {
+                throw new InvalidTwoFactorCodeError()
+              }
+            } else if (backupCode) {
+              const availableCodes = await prisma.backupCode.findMany({
+                where: { userId: user.id, usedAt: null },
+              })
+
+              let matched = false
+              for (const code of availableCodes) {
+                const isMatch = await bcrypt.compare(backupCode, code.codeHash)
+                if (isMatch) {
+                  matched = true
+                  await prisma.backupCode.update({
+                    where: { id: code.id },
+                    data: { usedAt: new Date() },
+                  })
+                  break
+                }
+              }
+
+              if (!matched) {
+                throw new InvalidTwoFactorCodeError()
+              }
+            }
+          }
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -71,12 +175,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email },
-          select: { isActive: true },
+          select: { isActive: true, twoFactorEnabled: true },
         });
 
         // Block inactive users from signing in
         if (dbUser && !dbUser.isActive) {
           return false;
+        }
+
+        if (account && account.provider !== "credentials" && dbUser?.twoFactorEnabled) {
+          return "/auth/login?error=TwoFactorRequired";
         }
       }
 
@@ -122,6 +230,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             image: true,
             role: true,
             isActive: true,
+            twoFactorEnabled: true,
           },
         });
 
@@ -131,6 +240,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user.image = dbUser.image;
           session.user.role = dbUser.role;
           session.user.isActive = dbUser.isActive;
+          session.user.twoFactorEnabled = dbUser.twoFactorEnabled;
         }
       }
       return session;
