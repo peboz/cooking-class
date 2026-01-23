@@ -27,11 +27,13 @@ export async function GET() {
         reviews: {
           where: {
             targetType: 'COURSE',
+            status: 'APPROVED',
           },
           select: {
             id: true,
             rating: true,
             comment: true,
+            photoUrl: true,
             createdAt: true,
             user: {
               select: {

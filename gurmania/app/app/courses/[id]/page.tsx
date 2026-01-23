@@ -74,6 +74,8 @@ interface CourseData {
       title: string;
       description: string | null;
       durationMin: number | null;
+      prepTimeMin: number | null;
+      cookTimeMin: number | null;
       order: number;
     }>;
   }>;
@@ -323,11 +325,12 @@ export default function CourseDetailPage() {
     : 0;
   
   const totalDuration = course.modules.reduce(
-    (acc, module) => 
-      acc + module.lessons.reduce(
-        (lAcc, lesson) => lAcc + (lesson.durationMin || 0),
-        0
-      ),
+    (acc, module) =>
+      acc + module.lessons.reduce((lAcc, lesson) => {
+        const prepCookTotal = (lesson.prepTimeMin || 0) + (lesson.cookTimeMin || 0);
+        const fallback = lesson.durationMin || 0;
+        return lAcc + (prepCookTotal > 0 ? prepCookTotal : fallback);
+      }, 0),
     0
   );
 

@@ -11,6 +11,7 @@ interface Review {
   id: string;
   rating: number;
   comment: string | null;
+  photoUrl?: string | null;
   createdAt: string;
   user: {
     name: string | null;
@@ -130,8 +131,8 @@ export default function InstructorReviewsPage() {
               course.reviews.length;
 
             return (
-              <Card key={course.id} className="overflow-hidden">
-                <CardHeader className="border-b bg-muted/50">
+              <Card key={course.id} className="overflow-hidden p-0">
+                <CardHeader className="border-b bg-muted/50 px-6 py-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>{course.title}</CardTitle>
@@ -177,6 +178,17 @@ export default function InstructorReviewsPage() {
                               <p className="text-sm text-muted-foreground">
                                 {review.comment}
                               </p>
+                            )}
+                            {review.photoUrl && (
+                              <div className="mt-3">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={review.photoUrl}
+                                  alt="Fotografija recenzije"
+                                  className="h-28 w-44 rounded-md border object-cover"
+                                  loading="lazy"
+                                />
+                              </div>
                             )}
                           </div>
                         </div>

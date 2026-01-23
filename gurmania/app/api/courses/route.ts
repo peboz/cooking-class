@@ -95,6 +95,7 @@ export async function GET(request: NextRequest) {
           },
           media: true,
           reviews: {
+            where: { status: 'APPROVED' },
             select: {
               rating: true,
             },

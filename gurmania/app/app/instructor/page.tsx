@@ -41,6 +41,7 @@ export default async function InstructorDashboard() {
           instructorId,
         },
         targetType: 'COURSE',
+        status: 'APPROVED',
       },
       select: {
         rating: true,
@@ -80,6 +81,7 @@ export default async function InstructorDashboard() {
           instructorId,
         },
         targetType: 'COURSE',
+        status: 'APPROVED',
       },
       select: {
         id: true,
